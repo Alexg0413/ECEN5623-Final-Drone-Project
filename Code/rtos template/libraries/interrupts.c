@@ -27,60 +27,20 @@
 #define DWT_CTRL    (*((volatile uint32_t *)0xE0001000))
 #define DEMCR       (*((volatile uint32_t *)0xE000EDFC))
 
-//// --------------------------------- seqgen.c timing
-//// 30Hz = 33.333333 ms
-//// 120 MHz clock: 120,000,000 / 30 = 4,000,000 ticks per period
-//#define SEQUENCER_PERIOD_TICKS 4000000 // 33.33 ms period at 120 MHz
-//
-//// semaphore table (seqgen.c)
-//static SeqEntry_t xSeqTable[NUM_SERVICES] =
-//{
-//    {10, 0, NULL},  // Service_1 - 3 Hz  , every 10th Sequencer loop
-//    {30, 0, NULL},  // Service_2 - 1 Hz  , every 30th Sequencer loop
-//    {60, 0, NULL},  // Service_3 - 0.5 Hz, every 60th Sequencer loop
-//    {30, 0, NULL},  // Service_4 - 1 Hz  , every 30th Sequencer loop
-//    {60, 0, NULL},  // Service_5 - 0.5 Hz, every 60th Sequencer loop
-//    {30, 0, NULL},  // Service_6 - 1 Hz  , every 30th Sequencer loop
-//    {300, 0, NULL}, // Service_7 - 0.1 Hz, every 300th Sequencer loop
-//    {300, 0, NULL}, // WCET log  - 0.1Hz , dump after longest period completes
-//};
-//// ---------------------------------
 
-// // --------------------------------- seqgen2x.c timing
-// // 60Hz = 16.6666667 ms
-// // 120 MHz clock: 120,000,000 / 60 = 2,000,000ticks per period
-// # define SEQUENCER_PERIOD_TICKS 2000000 // 16.66ms period
-//
-// // semaphore table (seqgen2x.c)
-// static SeqEntry_t xSeqTable[NUM_SERVICES] =
-// {
-//     {2, 0, NULL},   // Service_1 - 30 Hz, every other Sequencer loop
-//     {6, 0, NULL},   // Service_2 - 10 Hz, every 6th Sequencer loop
-//     {12, 0, NULL},  // Service_3 - 5 Hz , every 12th Sequencer loop
-//     {6, 0, NULL},   // Service_4 - 10 Hz, every 6th Sequencer loop
-//     {12, 0, NULL},  // Service_5 - 5 Hz , every 12th Sequencer loop
-//     {6, 0, NULL},   // Service_6 - 10 Hz, every 6th Sequencer loop
-//     {60, 0, NULL},  // Service_7 - 1 Hz , every 60th Sequencer loop
-//     {60, 0, NULL},  // WCET log  - 1 Hz , dump after longest period completes
-// };
-// // ---------------------------------
-
-// --------------------------------- seqgen.c x100 timing
-// 3000Hz = .33333333 ms
-// 120 MHz clock: 120,000,000 / 3000 = 4,000ticks per period
-#define SEQUENCER_PERIOD_TICKS 40000 // .3333 ms period at 120 MHz
+// --------------------------------- 
+// 600Hz = 1.6667 ms
+// 120 MHz clock: 120,000,000 / 600 = 200,000 ticks per period
+#define SEQUENCER_PERIOD_TICKS 200000 // 1.6667 ms period at 120 MHz
 
 // semaphore table (seqgen.c)
 static SeqEntry_t xSeqTable[NUM_SERVICES] =
 {
-    {10, 0, NULL},  // Service_1 - 300 Hz , every 10th Sequencer loop
-    {30, 0, NULL},  // Service_2 - 100 Hz , every 30th Sequencer loop
-    {60, 0, NULL},  // Service_3 - 50 Hz  , every 60th Sequencer loop
-    {30, 0, NULL},  // Service_4 - 100 Hz , every 30th Sequencer loop
-    {60, 0, NULL},  // Service_5 - 50 Hz  , every 60th Sequencer loop
-    {30, 0, NULL},  // Service_6 - 100 Hz , every 30th Sequencer loop
-    {300, 0, NULL}, // Service_7 - 10 Hz  , every 300th Sequencer loop
-    {300, 0, NULL}, // WCET log  - 10 Hz , dump after longest period completes
+    {3, 0, NULL},  // Service_1 - 200 Hz
+    {12, 0, NULL}, // Service_2 - 50 Hz 
+    {4, 0, NULL},  // Service_3 - 150 Hz
+    {6, 0, NULL},  // Service_4 - 100 Hz
+    {120, 0, NULL}, //  log     - 5 Hz
 };
 // ---------------------------------
 

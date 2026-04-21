@@ -95,20 +95,16 @@ int main(void)
 	// here we can create tasks
     /////////////////////////////////////
 
-    // RM policy: T1 > T2 = T4 = T6 > T3 = T5 > T7
-    xTaskCreate(vTask1, "T1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // T1: 3 Hz - highest
-    xTaskCreate(vTask2, "T2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // T2: 1 Hz - second
-    xTaskCreate(vTask3, "T3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // T3: 0.5 Hz - third
-    xTaskCreate(vTask4, "T4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // T4: 1 Hz - same as T2
-    xTaskCreate(vTask5, "T5", configMINIMAL_STACK_SIZE, (void*)xSems[4], configMAX_PRIORITIES-3, NULL); // T5: 0.5 Hz - same as T3
-    xTaskCreate(vTask6, "T6", configMINIMAL_STACK_SIZE, (void*)xSems[5], configMAX_PRIORITIES-2, NULL); // T6: 1 Hz - same as T2
-    xTaskCreate(vTask7, "T7", configMINIMAL_STACK_SIZE, (void*)xSems[6], configMAX_PRIORITIES-4, NULL); // T7: 0.1 Hz - lowest
+    // RM policy:  
+    xTaskCreate(vTask1, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
+    xTaskCreate(vTask2, "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz - second
+    xTaskCreate(vTask3, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz - third
+    xTaskCreate(vTask4, "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz - same as T2
 
-    // logging task - max priority, triggered after longest period completes (logs every 10 seconds)
-    // switch to vTimestampLoggingTask to change logging from timestamp log to WCET log
-    xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL);
+    // logging task - min priority, 
+    xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
 
-    // start by posting all semaphores (critical instant)
+    // start by posting all semaphores 
     for (i = 0; i < NUM_SERVICES-1; i++)
         xSemaphoreGive(xSems[i]);
 

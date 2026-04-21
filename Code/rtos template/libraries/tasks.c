@@ -14,7 +14,7 @@
 #include "utils/uartstdio.h"
 
 // running average log 
-#define MAX_TASKS 7
+#define MAX_TASKS 4
 
 typedef struct {
     uint32_t count;       // number of samples collected
@@ -23,8 +23,6 @@ typedef struct {
 
 // per-task stats, indexed by task_id-1
 static TaskStats_t xTask_stats[MAX_TASKS];
-
-#define FIB_SEQ_LEN 42
 
 // circular buffer timestamp log 
 #define LOG_SIZE 256
@@ -57,6 +55,10 @@ static inline void vLogTiming(uint32_t thread_id, uint32_t start, uint32_t end)
         ((int32_t)dur - (int32_t)xTask_stats[idx].avg_ticks) / (int32_t)xTask_stats[idx].count);
 }
 
+
+/////////////////////////////// TODO make printing conditional on DEBUG flag
+
+
 // creates UART (printing) semaphore, not needed but helps prevent intermingled print outputs
 void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore)
 {
@@ -69,7 +71,6 @@ void vTask1(void *pvParameters)
     uint32_t ulStart = 0;
     uint32_t ulEnd = 0;
     uint32_t ulThread_id = 1;
-    uint32_t ulCount = 0;
 
     while(1)
     {
@@ -77,8 +78,7 @@ void vTask1(void *pvParameters)
         ulStart = getTime_100ns();
 
         // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
+        
 
         ulEnd = getTime_100ns();
         vLogTiming(ulThread_id, ulStart, ulEnd);
@@ -91,7 +91,7 @@ void vTask2(void *pvParameters)
     uint32_t ulStart;
     uint32_t ulEnd;
     uint32_t ulThread_id = 2;
-    uint32_t ulCount = 0;
+
 
     while(1)
     {
@@ -99,8 +99,6 @@ void vTask2(void *pvParameters)
         ulStart = getTime_100ns();
 
         // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
 
         ulEnd = getTime_100ns();
         vLogTiming(ulThread_id, ulStart, ulEnd);
@@ -113,7 +111,7 @@ void vTask3(void *pvParameters)
     uint32_t ulStart;
     uint32_t ulEnd;
     uint32_t ulThread_id = 3;
-    uint32_t ulCount = 0;
+
 
     while(1)
     {
@@ -121,8 +119,6 @@ void vTask3(void *pvParameters)
         ulStart = getTime_100ns();
 
         // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
 
         ulEnd = getTime_100ns();
         vLogTiming(ulThread_id, ulStart, ulEnd);
@@ -135,7 +131,6 @@ void vTask4(void *pvParameters)
     uint32_t ulStart;
     uint32_t ulEnd;
     uint32_t ulThread_id = 4;
-    uint32_t ulCount = 0;
 
     while(1)
     {
@@ -143,74 +138,6 @@ void vTask4(void *pvParameters)
         ulStart = getTime_100ns();
 
         // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
-
-        ulEnd = getTime_100ns();
-        vLogTiming(ulThread_id, ulStart, ulEnd);
-    }
-}
-
-void vTask5(void *pvParameters)
-{
-    SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    uint32_t ulStart;
-    uint32_t ulEnd;
-    uint32_t ulThread_id = 5;
-    uint32_t ulCount = 0;
-
-    while(1)
-    {
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        ulStart = getTime_100ns();
-
-        // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
-
-        ulEnd = getTime_100ns();
-        vLogTiming(ulThread_id, ulStart, ulEnd);
-    }
-}
-
-void vTask6(void *pvParameters)
-{
-    SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    uint32_t ulStart;
-    uint32_t ulEnd;
-    uint32_t ulThread_id = 6;
-    uint32_t ulCount = 0;
-
-    while(1)
-    {
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        ulStart = getTime_100ns();
-
-        // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
-
-        ulEnd = getTime_100ns();
-        vLogTiming(ulThread_id, ulStart, ulEnd);
-    }
-}
-
-void vTask7(void *pvParameters)
-{
-    SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    uint32_t ulStart;
-    uint32_t ulEnd;
-    uint32_t ulThread_id = 7;
-    uint32_t ulCount = 0;
-
-    while(1)
-    {
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        ulStart = getTime_100ns();
-
-        // ---------- task work here ----------
-        ulCount++;
-        vFiboBurn(10 * ulThread_id);
 
         ulEnd = getTime_100ns();
         vLogTiming(ulThread_id, ulStart, ulEnd);
@@ -277,23 +204,5 @@ void vWcetLoggingTask(void *pvParameters)
     }
 }
 
-void vFiboBurn(unsigned int iterCnt)
-{
-    volatile unsigned int fib = 0, fib0 = 0, fib1 = 1;
-    unsigned int seqCnt = FIB_SEQ_LEN;
-    unsigned int i, j;
 
-    for (i = 0; i < iterCnt; i++)
-    {
-        fib0 = 0;
-        fib1 = 1;
-
-        for (j = 1; j < seqCnt; j++)
-        {
-            fib  = fib0 + fib1;
-            fib0 = fib1;
-            fib1 = fib;
-        }
-    }
-}
 
