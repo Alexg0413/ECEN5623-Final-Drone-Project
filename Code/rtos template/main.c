@@ -95,7 +95,7 @@ int main(void)
 	// here we can create tasks
     /////////////////////////////////////
 
-    // RM policy:  
+    // change vTaskX function to task functions once created 
     xTaskCreate(vTask1, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
     xTaskCreate(vTask2, "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz - second
     xTaskCreate(vTask3, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz - third

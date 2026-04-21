@@ -7,6 +7,7 @@
 
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
+#include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -55,10 +56,6 @@ static inline void vLogTiming(uint32_t thread_id, uint32_t start, uint32_t end)
         ((int32_t)dur - (int32_t)xTask_stats[idx].avg_ticks) / (int32_t)xTask_stats[idx].count);
 }
 
-
-/////////////////////////////// TODO make printing conditional on DEBUG flag
-
-
 // creates UART (printing) semaphore, not needed but helps prevent intermingled print outputs
 void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore)
 {
@@ -81,7 +78,9 @@ void vTask1(void *pvParameters)
         
 
         ulEnd = getTime_100ns();
+#if DEBUG
         vLogTiming(ulThread_id, ulStart, ulEnd);
+#endif
     }
 }
 
@@ -101,7 +100,9 @@ void vTask2(void *pvParameters)
         // ---------- task work here ----------
 
         ulEnd = getTime_100ns();
+#if DEBUG
         vLogTiming(ulThread_id, ulStart, ulEnd);
+#endif
     }
 }
 
@@ -121,7 +122,9 @@ void vTask3(void *pvParameters)
         // ---------- task work here ----------
 
         ulEnd = getTime_100ns();
+#if DEBUG
         vLogTiming(ulThread_id, ulStart, ulEnd);
+#endif
     }
 }
 
@@ -140,7 +143,9 @@ void vTask4(void *pvParameters)
         // ---------- task work here ----------
 
         ulEnd = getTime_100ns();
+#if DEBUG
         vLogTiming(ulThread_id, ulStart, ulEnd);
+#endif
     }
 }
 
@@ -152,6 +157,7 @@ void vTimestampLoggingTask(void *pvParameters)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
 
+#if DEBUG
         xSemaphoreTake(xPrintSem, portMAX_DELAY);
         uint32_t i;
         UARTprintf("---- Timestamp Log ----\n");
@@ -175,6 +181,7 @@ void vTimestampLoggingTask(void *pvParameters)
             }
         }
         xSemaphoreGive(xPrintSem);
+#endif
     }
 }
 
@@ -186,6 +193,7 @@ void vWcetLoggingTask(void *pvParameters)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
 
+#if DEBUG
         xSemaphoreTake(xPrintSem, portMAX_DELAY);
         uint32_t i;
         UARTprintf("---- Avg Duration Log ----\n");
@@ -201,6 +209,7 @@ void vWcetLoggingTask(void *pvParameters)
             }
         }
         xSemaphoreGive(xPrintSem);
+#endif
     }
 }
 

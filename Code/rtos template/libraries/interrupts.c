@@ -19,8 +19,6 @@
 #include "task.h"
 #include "semphr.h"
 
-// used for 0.1 usec resolution timing with DWT cycle counter
-#define CYCLES_PER_100NS  (12U)   // 120,000,000 / 10,000,000
 
 // DWT register addresses (ARM Cortex-M4)
 #define DWT_CYCCNT  (*((volatile uint32_t *)0xE0001004))
@@ -113,7 +111,14 @@ void DWT_init(void)
     DWT_CTRL    |= (1UL << 0);   // start counter
 }
 
+// used for 0.1 usec resolution timing with DWT cycle counter
 uint32_t getTime_100ns(void)
 {
-    return DWT_CYCCNT / CYCLES_PER_100NS;
+    return DWT_CYCCNT / 12U; 
+}
+
+// used for 1 usec resolution timing with DWT cycle counter
+uint32_t getTime_us(void)
+{
+    return DWT_CYCCNT / 120U; 
 }
