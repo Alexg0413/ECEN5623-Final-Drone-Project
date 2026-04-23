@@ -15,31 +15,22 @@
 
 /////// tasks 
 
-// task 1, place holder 
-void vTask1(void *pvParameters);
+// task 1 - 200Hz
+void State_input(void *pvParameters);
 
-// task 2, place holder 
-void vTask2(void *pvParameters);
+// task 2 - 50Hz
+void Radio_Input(void *pvParameters);
 
-// task 3, place holder 
-void vTask3(void *pvParameters);
+// task 3 - 150Hz
+void Motor_Output(void *pvParameters);
 
-// task 4, place holder 
-void vTask4(void *pvParameters);
+// task 4 - 100Hz
+void Controller(void *pvParameters);
 
-// task 5, place holder 
-void vTask5(void *pvParameters);
-
-// task 6, place holder 
-void vTask6(void *pvParameters);
-
-// task 7, place holder 
-void vTask7(void *pvParameters);
-
-// logs per-event start/end/duration from circular buffer (slow sequencer)
+// logs per-event start/end/duration from circular buffer 
 void vTimestampLoggingTask(void *pvParameters);
 
-// logs running average duration per task (fast sequencer)
+// logs running average duration per task 
 void vWcetLoggingTask(void *pvParameters);
 
 /////// helper functions

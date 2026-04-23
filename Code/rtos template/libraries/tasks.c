@@ -62,7 +62,12 @@ void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore)
     xPrintSem = xSemaphore;
 }
 
-void vTask1(void *pvParameters)
+// handle CAN bus input (interrupt)
+// converts data from int to float 
+// integrate acceleration to get velocity / position
+// do transform to convert from body frame to world frame (position) 
+// stores in shared state array
+void State_input(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
     uint32_t ulStart = 0;
@@ -84,7 +89,10 @@ void vTask1(void *pvParameters)
     }
 }
 
-void vTask2(void *pvParameters)
+// handles radio PWM inputs
+// converts control target data from int to float and stores in shared control input array
+// converts aux switch data from PWM duty cycle to 1 or 0 (int) and stores in shared switch input array
+void Radio_Input(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
     uint32_t ulStart;
@@ -106,7 +114,9 @@ void vTask2(void *pvParameters)
     }
 }
 
-void vTask3(void *pvParameters)
+// read motor PWM (ints) from shared control output array
+// write the PWM duty cycle to the PWM generator registers to command the motors
+void Motor_Output(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
     uint32_t ulStart;
@@ -128,7 +138,11 @@ void vTask3(void *pvParameters)
     }
 }
 
-void vTask4(void *pvParameters)
+// reads shared state and control input arrays
+// computes control outputs and mixes motor commands to get PWM values
+// reads AUX switches and determines flight mode
+// writes appropriate values to shared control output array
+void Controller(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
     uint32_t ulStart;
