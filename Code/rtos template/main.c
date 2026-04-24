@@ -103,11 +103,11 @@ int main(void)
     CANEnable(CAN1_BASE);
 
 
-    uint8_t numCAN 4;
+    uint8_t numCAN = 4;
     tCANMsgObject rxMsg[numCAN];
     uint8_t rxData[numCAN][8];
     uint8_t i = 1;
-    for(i = 0, i < numCAN, i++)
+    for(i = 0; i < numCAN; i++)
     {
         rxMsg[i].ui32MsgID = i + 1;  
         rxMsg[i].ui32MsgIDMask = 0x7FF;   // exact 11-bit match
@@ -130,9 +130,9 @@ int main(void)
     ///////////////////////////////////// semaphores
     // create semaphores for synchronizing tasks
     SemaphoreHandle_t xSems[NUM_SERVICES];
-    int i;
-    for (i = 0; i < NUM_SERVICES; i++)
-        xSems[i] = xSemaphoreCreateBinary();
+    int j;
+    for (j = 0; j < NUM_SERVICES; j++)
+        xSems[j] = xSemaphoreCreateBinary();
 
     // initialize timer interrupt 
     Timer0A_init(xSems, NUM_SERVICES);
