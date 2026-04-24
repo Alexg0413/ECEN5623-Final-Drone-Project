@@ -120,7 +120,7 @@ int main(void)
     rxMsg2.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg2.ui32MsgLen = 8;
     rxMsg2.pui8MsgData = rxData2;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg2, MSG_OBJ_TYPE_RX);
+    CANMessageSet(CAN1_BASE, 2, &rxMsg2, MSG_OBJ_TYPE_RX);
 
     tCANMsgObject rxMsg3;
     uint8_t rxData3[8];
@@ -129,7 +129,7 @@ int main(void)
     rxMsg3.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg3.ui32MsgLen = 8;
     rxMsg3.pui8MsgData = rxData3;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg3, MSG_OBJ_TYPE_RX);
+    CANMessageSet(CAN1_BASE, 3, &rxMsg3, MSG_OBJ_TYPE_RX);
 
     tCANMsgObject rxMsg4;
     uint8_t rxData4[8];
@@ -138,7 +138,7 @@ int main(void)
     rxMsg4.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg4.ui32MsgLen = 8;
     rxMsg4.pui8MsgData = rxData4;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg4, MSG_OBJ_TYPE_RX);
+    CANMessageSet(CAN1_BASE, 4, &rxMsg4, MSG_OBJ_TYPE_RX);
 
 
     ///////////////////////////////////// semaphores
