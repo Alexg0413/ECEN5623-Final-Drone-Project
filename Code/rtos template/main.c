@@ -103,20 +103,12 @@ int main(void)
     CANEnable(CAN1_BASE);
 
     tCANMsgObject rxMsg;
-
     uint8_t rxData[8];
-
-    rxMsg.ui32MsgID = 0x01;
+    rxMsg.ui32MsgID = 0x02;
     rxMsg.ui32MsgIDMask = 0x7FF;   // match full standard ID
     rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg.ui32MsgLen = 8;
     rxMsg.pui8MsgData = rxData;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
-
-    rxMsg.ui32MsgID = 0x02;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
-
-    rxMsg.ui32MsgID = 0x03;
     CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
 
     // // Send SET_DATA command
@@ -235,7 +227,7 @@ volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 void CAN1IntHandler(void)
 {
     int i;
-    uint32_t status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
+    uint32_t status = CANIntStatus(CAN1_BASE, CAN_STS_CONTROL);
     if (status == 2)  // message object ID (your rx object)
     {
         tCANMsgObject rxMsg;
@@ -256,6 +248,10 @@ void CAN1IntHandler(void)
         }
         UARTprintf("\r\n");
     }
+    else 
+    {
+        UARTprintf("Status Not 2, %u\r\n", status);
+    }   
 
     // Clear interrupt
     CANIntClear(CAN1_BASE, status);
