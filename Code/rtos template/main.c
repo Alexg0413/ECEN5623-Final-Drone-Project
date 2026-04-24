@@ -173,6 +173,7 @@ int main(void)
     // xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
 
     // start by posting all semaphores 
+    int i;
     for (i = 0; i < NUM_SERVICES-1; i++)
         xSemaphoreGive(xSems[i]);
 
