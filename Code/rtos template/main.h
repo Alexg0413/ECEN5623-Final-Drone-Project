@@ -40,6 +40,7 @@ extern volatile bool rising_edge[6];
 // PWM initialization
 void PWM_Input_Init(void);
 void PWM_Output_Init(void);
+void Motor_Update(int *cmd);
 
 // Timer ISR handlers (must match vector table)
 void Timer5AIntHandler(void);

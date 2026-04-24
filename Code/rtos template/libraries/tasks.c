@@ -98,14 +98,32 @@ void Radio_Input(void *pvParameters)
     uint32_t ulStart;
     uint32_t ulEnd;
     uint32_t ulThread_id = 2;
-
+    uint32_t pw[6];
+    int i;
 
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
         ulStart = getTime_100ns();
 
-        // ---------- task work here ----------
+        taskENTER_CRITICAL();
+        for (i = 0; i < 6; i++)
+            pw[i] = pulse_width[i];
+        taskEXIT_CRITICAL();
+
+        float roll   = (pw[0] - 1500.0f) / 500.0f;
+        float pitch  = (pw[1] - 1500.0f) / 500.0f;
+        float yaw    = (pw[3] - 1500.0f) / 500.0f;
+        float thrust = (pw[2] - 1000.0f) / 1000.0f;
+
+        taskENTER_CRITICAL();
+        input_vec[0] = thrust;
+        input_vec[1] = roll;
+        input_vec[2] = pitch;
+        input_vec[3] = yaw;
+        switch_vec[0] = (pw[4] > 1500);
+        switch_vec[1] = (pw[5] > 1500);
+        taskEXIT_CRITICAL();
 
         ulEnd = getTime_100ns();
 #if DEBUG
@@ -122,14 +140,34 @@ void Motor_Output(void *pvParameters)
     uint32_t ulStart;
     uint32_t ulEnd;
     uint32_t ulThread_id = 3;
-
+    int motor_cmd[4];
+    int arm;
+    int i;
 
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
         ulStart = getTime_100ns();
 
-        // ---------- task work here ----------
+        taskENTER_CRITICAL();
+        for (i = 0; i < 4; i++)
+            motor_cmd[i] = output_vec[i];
+        arm = switch_vec[0];
+        taskEXIT_CRITICAL();
+
+        if (!arm)
+        {
+            for (i = 0; i < 4; i++)
+                motor_cmd[i] = 1000;
+        }
+
+        for (i = 0; i < 4; i++)
+        {
+            if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
+            if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
+        }
+
+        Motor_Update(motor_cmd);
 
         ulEnd = getTime_100ns();
 #if DEBUG

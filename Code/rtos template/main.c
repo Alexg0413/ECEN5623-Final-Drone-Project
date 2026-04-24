@@ -273,45 +273,6 @@ void Timer4BIntHandler(void)
     }
 }
 
-void Radio_Input(void *pvParameters)
-{
-    int i;
-    for (;;)
-    {
-        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);// blocks until sequencer releases it
-
-        uint32_t pw[6];// copy the pulsewidth safely since it could be changed
-
-        taskENTER_CRITICAL();
-        for (i = 0; i < 6; i++)
-         pw[i] = pulse_width[i];// copy it over safely
-        taskEXIT_CRITICAL();
-
-        // Normalize inputs
-        float roll   = (pw[0] - 1500.0f) / 500.0f;   //normalize roll/pitch/yaw to be within -1 to 1 for those manuevers 
-        float pitch  = (pw[1] - 1500.0f) / 500.0f;
-        float yaw    = (pw[3] - 1500.0f) / 500.0f;
-        float thrust = (pw[2] - 1000.0f) / 1000.0f;  // can't have negative thrust so normalize 0 to 1 
-
-
-        taskENTER_CRITICAL();
-
-        // Store into system input vector
-        input_vec[0] = thrust;
-        input_vec[1] = roll;
-        input_vec[2] = pitch;
-        input_vec[3] = yaw;
-
-        // Switches
-        switch_vec[0] = (pw[4] > 1500); // ARM either on or off
-        switch_vec[1] = (pw[5] > 1500); // AUX
-
-        taskEXIT_CRITICAL();
-
-    }
-}
-
-
 void PWM_Input_Init(void)
 {
 
@@ -497,35 +458,4 @@ void Motor_Update(int *cmd)
 }
 
 
-void Motor_Output(void *pvParameters)
-{
-    int i;
-    int motor_cmd[4];
-    int arm;
-    for (;;)
-    {
-        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);
-
-        taskENTER_CRITICAL();// safely copy things
-        for (i = 0; i < 4; i++)
-            motor_cmd[i] = output_vec[i];
-
-        arm = switch_vec[0];
-        taskEXIT_CRITICAL();
-
-        if (!arm)// if arm off force everything to minimum throttle
-        {
-         for (i = 0; i < 4; i++)
-             motor_cmd[i] = 1000;
-        }
-
-        for (i = 0; i < 4; i++)// clamp everything
-        {
-        if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
-        if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
-        }
-
-        Motor_Update(motor_cmd);
-        }
-}
 
