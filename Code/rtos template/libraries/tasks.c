@@ -131,7 +131,7 @@ void Radio_Input(void *pvParameters)
 #endif
     }
 }
-
+/*
 // read motor PWM (ints) from shared control output array
 // write the PWM duty cycle to the PWM generator registers to command the motors
 void Motor_Output(void *pvParameters)
@@ -175,6 +175,7 @@ void Motor_Output(void *pvParameters)
 #endif
     }
 }
+*/
 
 void Motor_Output(void *pvParameters)
 {
@@ -186,22 +187,48 @@ void Motor_Output(void *pvParameters)
     int arm;
     int i;
 
-    static int test_done = 0;   // 🔥 one-time test flag
+    static int test_done = 0;
+
+#if DEBUG
+    static uint32_t lastPrint = 0;
+#endif
 
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
         ulStart = getTime_100ns();
 
+    
         if (!test_done)
         {
-            // spin motors
-            for (i = 0; i < 4; i++)
-                motor_cmd[i] = 1600;
+#if DEBUG
+            UARTprintf("Test\r\n");
+#endif
 
-            Motor_Update(motor_cmd);
+            uint32_t start = xTaskGetTickCount();
 
-            vTaskDelay(pdMS_TO_TICKS(1000)); // 0.5 sec
+            while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(500))
+            {
+                for (i = 0; i < 4; i++)
+                    motor_cmd[i] = 1600;
+
+                Motor_Update(motor_cmd);
+
+#if DEBUG
+                uint32_t now = xTaskGetTickCount();
+                if ((now - lastPrint) > pdMS_TO_TICKS(100))
+                {
+                    UARTprintf("TEST PWM: %d %d %d %d\r\n",
+                               motor_cmd[0],
+                               motor_cmd[1],
+                               motor_cmd[2],
+                               motor_cmd[3]);
+                    lastPrint = now;
+                }
+#endif
+
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
 
             // stop motors
             for (i = 0; i < 4; i++)
@@ -209,10 +236,14 @@ void Motor_Output(void *pvParameters)
 
             Motor_Update(motor_cmd);
 
+#if DEBUG
+            UARTprintf("TEST COMPLETE \r\n");
+#endif
+
             test_done = 1;
         }
 
-       
+
         taskENTER_CRITICAL();
         for (i = 0; i < 4; i++)
             motor_cmd[i] = output_vec[i];
@@ -233,6 +264,19 @@ void Motor_Output(void *pvParameters)
 
         Motor_Update(motor_cmd);
 
+#if DEBUG
+        uint32_t now = xTaskGetTickCount();
+        if ((now - lastPrint) > pdMS_TO_TICKS(100))
+        {
+            UARTprintf("RUN PWM: %d %d %d %d\r\n",
+                       motor_cmd[0],
+                       motor_cmd[1],
+                       motor_cmd[2],
+                       motor_cmd[3]);
+            lastPrint = now;
+        }
+#endif
+
         ulEnd = getTime_100ns();
 
 #if DEBUG
@@ -240,7 +284,6 @@ void Motor_Output(void *pvParameters)
 #endif
     }
 }
-
 // reads shared state and control input arrays
 // computes control outputs and mixes motor commands to get PWM values
 // reads AUX switches and determines flight mode
