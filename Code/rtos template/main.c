@@ -41,6 +41,10 @@
 
 uint32_t g_ui32SysClock;
 
+#define DID_SET_DATA  3
+#define DID_INS_1     4   // verify in your firmware
+#define DID_IMU       58  // verify
+
 // Main function
 int main(void)
 {
@@ -101,45 +105,56 @@ int main(void)
     // Enable Module
     CANEnable(CAN0_BASE);
 
-    // ---------------------------
-    // Transmit Setup
-    // ---------------------------
+    // Send SET_DATA command
     tCANMsgObject txMsg;
-    uint8_t txData[8] = {1,2,3,4,5,6,7,8};
+    uint8_t txData[8];
 
-    txMsg.ui32MsgID = 0x100;           // CAN ID
-    txMsg.ui32MsgIDMask = 0;           // Not using filtering here
-    txMsg.ui32Flags = MSG_OBJ_TX_INT_ENABLE;
+    txMsg.ui32MsgID = 0x100;   // host → IMX (verify this)
+    txMsg.ui32Flags = MSG_OBJ_NO_FLAGS;
     txMsg.ui32MsgLen = 8;
     txMsg.pui8MsgData = txData;
 
-    // Send Message
-    uint32_t ui32ObjID = 1;
-    CANMessageSet(CAN0_BASE, ui32ObjID, &msg, MSG_OBJ_TYPE_TX);
+    uint8_t packet[24];
 
-    // ---------------------------
-    // Receive Setup
-    // ---------------------------
-    tCANMsgObject rxMsg;
-    uint8_t rxData[8];
+    // ---- Header ----
+    packet[0] = 0xFF;
+    packet[1] = 0x00;
+    packet[2] = DID_SET_DATA;   // DID_SET_DATA (LSB)
+    packet[3] = 0x00;
 
-    rxMsg.ui32MsgID = 0x100;          // Filter ID
-    rxMsg.ui32MsgIDMask = 0x7FF;      // Standard ID mask
-    rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
-    rxMsg.ui32MsgLen = 8;
-    rxMsg.pui8MsgData = rxData;
+    packet[4] = 16;     // payload size
+    packet[5] = 0x00;
 
-    uint32_t ui32ObjID = 2;
-    CANMessageSet(CAN0_BASE, ui32ObjID, &rxMsg, MSG_OBJ_TYPE_RX);
-    // Receive Message
-    bool bClrPendingInt = true;
-    CANMessageGet(CAN0_BASE, ui32ObjID, &rxMsg, bClrPendingInt);
+    packet[6] = 0x00;
+    packet[7] = 0x00;
+
+    // ---- Payload ----
+    uint32_t dataId = DID_INS_1;     // DID_INS_1 (VERIFY THIS)
+    uint32_t offset = 0;
+    uint32_t size   = 0;
+    uint32_t period = 100;   // 10 Hz
+
+    memcpy(&packet[8],  &dataId, 4);
+    memcpy(&packet[12], &offset, 4);
+    memcpy(&packet[16], &size,   4);
+    memcpy(&packet[20], &period, 4);
+
+    // ---- Send 3 CAN frames ----
+    for (int i = 0; i < 24; i += 8)
+    {
+        memcpy(txData, &packet[i], 8);
+        CANMessageSet(CAN0_BASE, 1, &txMsg, MSG_OBJ_TYPE_TX);
+
+        // wait for TX complete (important on Tiva)
+        while (CANStatusGet(CAN0_BASE, CAN_STS_TXREQUEST));
+    }
 
     // ---------------------------
     // Interrupt Driven
     // ---------------------------
     IntEnable(INT_CAN0);
     CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
+
 
 
     ///////////////////////////////////// semaphores
@@ -197,18 +212,34 @@ void __error__(char *pcFilename, uint32_t ui32Line)
     }
 }
 
-// CAN Interrupt Handler
-void CAN0_Handler(void)
+#define RX_BUFFER_SIZE 256
+
+volatile uint8_t canBuffer[RX_BUFFER_SIZE];
+
+void CAN0IntHandler(void)
 {
     uint32_t status = CANIntStatus(CAN0_BASE, CAN_INT_STS_CAUSE);
+    if (status == 2)  // message object ID (your rx object)
+    {
+        tCANMsgObject rxMsg;
+        uint8_t rxData[8];
 
-    if(status == 2) // message object 2
-    {
+        rxMsg.pui8MsgData = rxData;
+
+        // Read message (this clears interrupt for that object)
         CANMessageGet(CAN0_BASE, 2, &rxMsg, true);
+
+        UARTprintf("Printing received CAN Message:\r\n");
+        // ---- Your processing ----
+        // Example: print or buffer
+        for (int i = 0; i < rxMsg.ui32MsgLen; i++)
+        {
+            UARTprintf("%02X, " ,rxData[i]);
+            // canBuffer[writeIdx++ % RX_BUFFER_SIZE] = rxData[i];
+        }
+        UARTprintf("\r\n");
     }
-    else
-    {
-        // handle errors/status
-    }
+
+    // Clear interrupt
     CANIntClear(CAN0_BASE, status);
 }
