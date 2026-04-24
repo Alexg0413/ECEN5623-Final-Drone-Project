@@ -176,6 +176,71 @@ void Motor_Output(void *pvParameters)
     }
 }
 
+void Motor_Output(void *pvParameters)
+{
+    SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
+    uint32_t ulStart;
+    uint32_t ulEnd;
+    uint32_t ulThread_id = 3;
+    int motor_cmd[4];
+    int arm;
+    int i;
+
+    static int test_done = 0;   // 🔥 one-time test flag
+
+    while(1)
+    {
+        xSemaphoreTake(semaphore, portMAX_DELAY);
+        ulStart = getTime_100ns();
+
+        if (!test_done)
+        {
+            // spin motors
+            for (i = 0; i < 4; i++)
+                motor_cmd[i] = 1600;
+
+            Motor_Update(motor_cmd);
+
+            vTaskDelay(pdMS_TO_TICKS(1000)); // 0.5 sec
+
+            // stop motors
+            for (i = 0; i < 4; i++)
+                motor_cmd[i] = 1000;
+
+            Motor_Update(motor_cmd);
+
+            test_done = 1;
+        }
+
+       
+        taskENTER_CRITICAL();
+        for (i = 0; i < 4; i++)
+            motor_cmd[i] = output_vec[i];
+        arm = switch_vec[0];
+        taskEXIT_CRITICAL();
+
+        if (!arm)
+        {
+            for (i = 0; i < 4; i++)
+                motor_cmd[i] = 1000;
+        }
+
+        for (i = 0; i < 4; i++)
+        {
+            if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
+            if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
+        }
+
+        Motor_Update(motor_cmd);
+
+        ulEnd = getTime_100ns();
+
+#if DEBUG
+        vLogTiming(ulThread_id, ulStart, ulEnd);
+#endif
+    }
+}
+
 // reads shared state and control input arrays
 // computes control outputs and mixes motor commands to get PWM values
 // reads AUX switches and determines flight mode
