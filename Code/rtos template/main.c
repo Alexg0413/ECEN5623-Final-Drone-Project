@@ -328,8 +328,6 @@ void PWM_Input_Init(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);  // for PB2, PB3
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);  // for PM4, PM5
 
-    // wait until block is ready
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER1));
     // Wait until ready
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER5));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER3));
