@@ -89,13 +89,8 @@ int main(void)
 
     // Interrupt registration (check return)
     UARTprintf("Registering CAN1 interrupt\r\n");
-    result = CANIntRegister(CAN1_BASE, CAN1IntHandler);
-    if(result != 0)
-    {
-        UARTprintf("CAN ISR Register Error\r\n");
-        while(1);
-    }
-
+    CANIntRegister(CAN1_BASE, CAN1IntHandler);
+    
     // Interrupt enable
     IntEnable(INT_CAN1);
     CANIntEnable(CAN1_BASE,
