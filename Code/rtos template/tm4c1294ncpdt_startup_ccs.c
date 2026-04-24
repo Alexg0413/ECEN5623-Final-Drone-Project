@@ -62,7 +62,7 @@ extern void xPortSysTickHandler(void);
 //*****************************************************************************
 // To be added by user
 extern void Timer0AIntHandler(void);
-extern void CAN0IntHandler(void);
+extern void CAN1IntHandler(void);
 
 //*****************************************************************************
 //
@@ -129,8 +129,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
     IntDefaultHandler,                      // I2C1 Master and Slave
-    CAN0IntHandler,                      // CAN0
-    IntDefaultHandler,                      // CAN1
+    IntDefaultHandler,                      // CAN0
+    CAN1IntHandler,                         // CAN1
     IntDefaultHandler,                      // Ethernet
     IntDefaultHandler,                      // Hibernate
     IntDefaultHandler,                      // USB0

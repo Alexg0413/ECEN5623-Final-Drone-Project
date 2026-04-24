@@ -14,6 +14,7 @@
 // Standard includes
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
+#include <libraries/uart.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -46,7 +47,7 @@ uint32_t g_ui32SysClock;
 #define DID_INS_1     4   // verify in your firmware
 #define DID_IMU       58  // verify
 
-void CAN0IntHandler(void);
+void CAN1IntHandler(void);
 
 
 // Main function
@@ -66,44 +67,33 @@ int main(void)
 
 
     ///////////////////////////////////// UART printing
-    // UART2 on PA6/PA7,  PA0/PA1 are reserved for CAN0 (JP4,5 set to CAN)
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART2);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_UART2)){}
-    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA)){}
-
-    // Configure GPIO Pins for UART2 (PA6=RX, PA7=TX)
-    GPIOPinConfigure(GPIO_PA6_U2RX);
-    GPIOPinConfigure(GPIO_PA7_U2TX);
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_6 | GPIO_PIN_7);
-
-    // Initialize the UART for console I/O.
-    UARTConfigSetExpClk(UART2_BASE, g_ui32SysClock, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-    UARTStdioConfig(2, 115200, g_ui32SysClock);
-    UARTEnable(UART2_BASE);
+    // UART0 on PA0/PA1 via debug VCOM (JP4&5 set to UART)
+    UART0_init(g_ui32SysClock);
 
     // ---------------------------
-    // Enable CAN0 
+    // Enable CAN1 (expansion header PB0/PB1)
     // ---------------------------
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_CAN0);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_CAN0));
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_CAN1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_CAN1));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
-    // Configure GPIO Pins for CAN0 (PA0=RX, PA1=TX)
-    GPIOPinConfigure(GPIO_PA0_CAN0RX);
-    GPIOPinConfigure(GPIO_PA1_CAN0TX);
-    GPIOPinTypeCAN(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    // Configure GPIO Pins for CAN1 (PB0=RX, PB1=TX)
+    GPIOPinConfigure(GPIO_PB0_CAN1RX);
+    GPIOPinConfigure(GPIO_PB1_CAN1TX);
+    GPIOPinTypeCAN(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     // init CAN and set bit rate to 1 Mbps
-    UARTprintf("Initalizing CAN0_BASE\r\n");
-    CANInit(CAN0_BASE);
-    CANBitRateSet(CAN0_BASE, g_ui32SysClock, 1000000); // 1 Mbps
-    CANEnable(CAN0_BASE);
+    UARTprintf("Initalizing CAN1_BASE\r\n");
+    CANInit(CAN1_BASE);
+    CANBitRateSet(CAN1_BASE, g_ui32SysClock, 1000000); // 1 Mbps
+    CANEnable(CAN1_BASE);
 
     // Send SET_DATA
-    UARTprintf("Registering CAN0_BASE\r\n");
-    CANIntRegister(CAN0_BASE, CAN0IntHandler);
-    IntEnable(INT_CAN0);
-    CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
+    UARTprintf("Registering CAN1_BASE\r\n");
+    CANIntRegister(CAN1_BASE, CAN1IntHandler);
+    IntEnable(INT_CAN1);
+    CANIntEnable(CAN1_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
     // Send SET_DATA command
     UARTprintf("Sending SET_DATA\r\n");
@@ -145,10 +135,10 @@ int main(void)
     for (i = 0; i < 24; i += 8)
     {
         memcpy(txData, &packet[i], 8);
-        CANMessageSet(CAN0_BASE, 1, &txMsg, MSG_OBJ_TYPE_TX);
+        CANMessageSet(CAN1_BASE, 1, &txMsg, MSG_OBJ_TYPE_TX);
 
         // wait for TX complete (important on Tiva)
-        while (CANStatusGet(CAN0_BASE, CAN_STS_TXREQUEST));
+        while (CANStatusGet(CAN1_BASE, CAN_STS_TXREQUEST));
     }
     UARTprintf("Sent SET_DATA\r\n");
 
@@ -156,8 +146,8 @@ int main(void)
     // Interrupt Driven
     // ---------------------------
     UARTprintf("Enabling CAN0 Interrupt\r\n");
-    IntEnable(INT_CAN0);
-    CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
+    IntEnable(INT_CAN1);
+    CANIntEnable(CAN1_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
 
 
@@ -218,10 +208,10 @@ void __error__(char *pcFilename, uint32_t ui32Line)
 
 volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 
-void CAN0IntHandler(void)
+void CAN1IntHandler(void)
 {
     int i;
-    uint32_t status = CANIntStatus(CAN0_BASE, CAN_INT_STS_CAUSE);
+    uint32_t status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
     if (status == 2)  // message object ID (your rx object)
     {
         tCANMsgObject rxMsg;
@@ -230,7 +220,7 @@ void CAN0IntHandler(void)
         rxMsg.pui8MsgData = rxData;
 
         // Read message (this clears interrupt for that object)
-        CANMessageGet(CAN0_BASE, 2, &rxMsg, true);
+        CANMessageGet(CAN1_BASE, 2, &rxMsg, true);
 
         UARTprintf("Printing received CAN Message:\r\n");
         // ---- Your processing ----
@@ -244,5 +234,5 @@ void CAN0IntHandler(void)
     }
 
     // Clear interrupt
-    CANIntClear(CAN0_BASE, status);
+    CANIntClear(CAN1_BASE, status);
 }
