@@ -201,33 +201,52 @@ volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 
 void CAN1IntHandler(void)
 {
-    int i;
-    uint32_t status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
-    if (status <= 4)  // mailbox 1 (RX ID 0x02)
+    uint32_t status;
+
+    status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
+
+    if(status == 0)
     {
-        tCANMsgObject rxMsg;
-        uint8_t rxData[8];
-
-        rxMsg.pui8MsgData = rxData;
-
-        // Read message (clears the pending interrupt for this mailbox)
-        CANMessageGet(CAN1_BASE, 1, &rxMsg, true);
-
-        UARTprintf("Printing received CAN Message Status %u:\r\n", status);
-        // ---- Your processing ----
-        // Example: print or buffer
-        for (i = 0; i < rxMsg.ui32MsgLen; i++)
-        {
-            UARTprintf("%02X, " ,rxData[i]);
-            // canBuffer[writeIdx++ % RX_BUFFER_SIZE] = rxData[i];
-        }
-        UARTprintf("\r\n");
+        // status interrupt (errors, etc.)
+        uint32_t err = CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
+        return;
     }
-    else
-    {
-        UARTprintf("Status Not 2, %u\r\n", status);
-    }   
 
-    // Clear interrupt
+    // status = message object number (THIS is key)
+    tCANMsgObject msg;
+    uint8_t data[8];
+
+    msg.pui8MsgData = data;
+
+    CANMessageGet(CAN1_BASE, status, &msg, true);
+
+    // NOW you can read ID
+    uint32_t canID = msg.ui32MsgID;
+
+    // handle based on ID
+    switch(canID)
+    {
+        case 0x01:
+            UARTprintf("Read CAN ID 0x01\r\n");
+            break;
+
+        case 0x02:
+            UARTprintf("Read CAN ID 0x02\r\n");
+            break;
+
+        case 0x03:
+            UARTprintf("Read CAN ID 0x03\r\n");
+            break;
+
+        case 0x04:
+            UARTprintf("Read CAN ID 0x04\r\n");
+            break;
+
+        default:
+            // unknown frame
+            UARTprintf("Unknown CAN ID %u\r\n", canID);
+            break;
+    }
+
     CANIntClear(CAN1_BASE, status);
 }
