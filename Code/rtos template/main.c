@@ -17,6 +17,7 @@
 #include <libraries/uart.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "driverlib/pwm.h"
 
 // TivaWare includes
 #include "driverlib/debug.h"
@@ -32,12 +33,33 @@
 // project includes
 #include "main.h"
 
-uint32_t g_ui32SysClock;
+#include "driverlib/timer.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/interrupt.h"
+
+void Timer1AIntHandler(void);
+void Timer1BIntHandler(void);
+void Timer3AIntHandler(void);//handlers for timers using ccp this will map to different individual channels 
+void Timer3BIntHandler(void);
+void Timer4AIntHandler(void);
+void Timer4BIntHandler(void);
+
+uint32_t pwmPeriod;
+uint32_t pwmClock;// will be set up later 
+
+#define PWM_FREQUENCY 150 //how often we update the motors
+
+uint32_t g_ui32SysClock;//stores cpu frequency 
 
 float state_vec[9] = {0};  //  [roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate, z_pos, z_velo, z_accel]
 float input_vec[4]  = {0};  // [thrust, roll_target, pitch_target, yaw_rate_target]
 int   output_vec[4] = {0};  // [motor0, motor1, motor2, motor3]
-int   switch_vec[3] = {0};  // [Arm, Aux1, Aux2]
+int   switch_vec[2] = {0};  // [Arm, Aux1, Aux2]
+volatile uint32_t pulse_width[6] ;//will hold final pulse width tiimg in ticks 
+volatile uint32_t rise_time[6];//used to calculate pulse width 
+volatile bool rising_edge[6] = {true,true,true,true,true,true};// tracks if next edge is falling or rising 
 
 // Main function
 int main(void)
@@ -63,9 +85,23 @@ int main(void)
     for (i = 0; i < NUM_SERVICES; i++)
         xSems[i] = xSemaphoreCreateBinary();
 
-    // initialize timer interrupt 
+    // initialize timer interrupt for sequencer
     Timer0A_init(xSems, NUM_SERVICES);
- 
+
+
+
+    PWM_Output_Init();//motor outouts will initialize motors to pwm 1000 microS which is minimum throttle 
+
+    for (int i = 0; i < 4; i++)
+    {
+    output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a 
+    }
+    //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
+    SysCtlDelay(g_ui32SysClock / 3 * 2); // 2 seconds from datasheet, this will cause 2 loud beeps then arm 
+
+    //sets up gpio and timers put this after so we don't receive data just yet 
+    PWM_Input_Init(); // this is for radio 
+
     // passes the UART semaphore to the tasks module so tasks can use it for synchronized printing
     SemaphoreHandle_t xPrintSem = xSemaphoreCreateBinary();
     vSetUARTSemaphore(xPrintSem); 
@@ -73,6 +109,7 @@ int main(void)
     
     // initialize DWT cycle counter for accurate timing
     DWT_init(); 
+
 
 
 	//////////////////////////////////////////////////////////// create tasks here
@@ -109,3 +146,380 @@ void __error__(char *pcFilename, uint32_t ui32Line)
     {
     }
 }
+
+void Timer1AIntHandler(void)
+{
+    TimerIntClear(TIMER1_BASE, TIMER_CAPA_EVENT);// clear interrupt once triggered
+
+    uint32_t time = TimerValueGet(TIMER1_BASE, TIMER_A);// to be used for calculations 
+
+    if (rising_edge[0])// if it rises then we know its the start of the pwm 
+    {
+        rise_time[0] = time;
+        TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
+        rising_edge[0] = false;
+    }
+    else
+    {
+        pulse_width[0] = rise_time[0] - time;  //once you go low it is over so you can calculate pulse width
+        TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);// switch back to low to high edge detection
+        rising_edge[0] = true;
+    }
+}
+
+
+void Timer1BIntHandler(void)
+{
+    TimerIntClear(TIMER1_BASE, TIMER_CAPB_EVENT);
+
+    uint32_t time = TimerValueGet(TIMER1_BASE, TIMER_B);
+
+    if (rising_edge[1])
+    {
+        rise_time[1] = time;
+        TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_NEG_EDGE);
+        rising_edge[1] = false;
+    }
+    else
+    {
+        pulse_width[1] = rise_time[1] - time;
+        TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+        rising_edge[1] = true;
+    }
+}
+
+
+
+
+// CH5 to Timer3A
+void Timer3AIntHandler(void)
+{
+    TimerIntClear(TIMER3_BASE, TIMER_CAPA_EVENT);
+
+    uint32_t time = TimerValueGet(TIMER3_BASE, TIMER_A);
+
+    if (rising_edge[2])
+    {
+        rise_time[2] = time;
+        TimerControlEvent(TIMER3_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
+        rising_edge[2] = false;
+    }
+    else
+    {
+        pulse_width[2] = rise_time[2] - time;
+        TimerControlEvent(TIMER3_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+        rising_edge[2] = true;
+    }
+}
+
+// CH6  Timer3B
+void Timer3BIntHandler(void)
+{
+    TimerIntClear(TIMER3_BASE, TIMER_CAPB_EVENT);
+
+    uint32_t time = TimerValueGet(TIMER3_BASE, TIMER_B);
+
+    if (rising_edge[3])
+    {
+        rise_time[3] = time;
+        TimerControlEvent(TIMER3_BASE, TIMER_B, TIMER_EVENT_NEG_EDGE);
+        rising_edge[3] = false;
+    }
+    else
+    {
+        pulse_width[3] = rise_time[3] - time;
+        TimerControlEvent(TIMER3_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+        rising_edge[3] = true;
+    }
+}
+void Timer4AIntHandler(void)
+{
+    TimerIntClear(TIMER4_BASE, TIMER_CAPA_EVENT);
+
+    uint32_t time = TimerValueGet(TIMER4_BASE, TIMER_A);
+
+    if (rising_edge[4])
+    {
+        rise_time[4] = time;
+        TimerControlEvent(TIMER4_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
+        rising_edge[4] = false;
+    }
+    else
+    {
+        pulse_width[4] = rise_time[4] - time;
+        TimerControlEvent(TIMER4_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+        rising_edge[4] = true;
+    }
+}
+
+void Timer4BIntHandler(void)
+{
+    TimerIntClear(TIMER4_BASE, TIMER_CAPB_EVENT);
+
+    uint32_t time = TimerValueGet(TIMER4_BASE, TIMER_B);
+
+    if (rising_edge[5])
+    {
+        rise_time[5] = time;
+        TimerControlEvent(TIMER4_BASE, TIMER_B, TIMER_EVENT_NEG_EDGE);
+        rising_edge[5] = false;
+    }
+    else
+    {
+        pulse_width[5] = rise_time[5] - time;
+        TimerControlEvent(TIMER4_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+        rising_edge[5] = true;
+    }
+}
+
+void Radio_Input(void *pvParameters)
+{
+    for (;;)
+    {
+        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);// blocks until sequencer releases it 
+
+        uint32_t pw[6];// copy the pulsewidth safely since it could be changed 
+
+        taskENTER_CRITICAL();
+        for (int i = 0; i < 6; i++)
+         pw[i] = pulse_width[i];// copy it over safely 
+        taskEXIT_CRITICAL();
+
+        // Normalize inputs
+        float roll   = (pw[0] - 1500.0f) / 500.0f;   //normalize roll/pitch/yaw to be within -1 to 1 for those manuevers 
+        float pitch  = (pw[1] - 1500.0f) / 500.0f;
+        float yaw    = (pw[3] - 1500.0f) / 500.0f;
+        float thrust = (pw[2] - 1000.0f) / 1000.0f;  // can't have negative thrust so normalize 0 to 1 
+
+
+        taskENTER_CRITICAL();
+
+        // Store into system input vector
+        input_vec[0] = thrust;
+        input_vec[1] = roll;
+        input_vec[2] = pitch;
+        input_vec[3] = yaw;
+
+        // Switches
+        switch_vec[0] = (pw[4] > 1500); // ARM either on or off
+        switch_vec[1] = (pw[5] > 1500); // AUX
+
+        taskEXIT_CRITICAL();
+
+    }
+}
+
+
+void PWM_Input_Init(void)
+{
+
+    // we need to turn on 6 timers that will read the PWM of 6 channels 
+
+    //turn on hardware blocks
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER4);
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);// hardware is off if not on 
+
+    // wait until block is ready 
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER1));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER3));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER4));
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOM));
+
+    //make gpio pins to timer capture input 
+    // Timer1 
+    GPIOPinConfigure(GPIO_PB6_T1CCP0);  // CH1
+    GPIOPinConfigure(GPIO_PB7_T1CCP1);  // CH2
+    GPIOPinTypeTimer(GPIO_PORTB_BASE, GPIO_PIN_6 | GPIO_PIN_7);
+
+    // Timer3
+    GPIOPinConfigure(GPIO_PC6_T3CCP0);  // CH5
+    GPIOPinConfigure(GPIO_PC7_T3CCP1);  // CH6
+    GPIOPinTypeTimer(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
+
+    // Timer 4
+    GPIOPinConfigure(GPIO_PM4_T4CCP0);  // CH5
+    GPIOPinConfigure(GPIO_PM5_T4CCP1);  // CH6
+    GPIOPinTypeTimer(GPIO_PORTM_BASE, GPIO_PIN_4 | GPIO_PIN_5);
+
+
+    // congigure timers to be in capture mode check edges, measure time between edges 
+
+    TimerConfigure(TIMER1_BASE, TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
+
+    TimerConfigure(TIMER3_BASE, TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
+
+    TimerConfigure(TIMER4_BASE,TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
+
+
+    // Add after each TimerConfigure(), before TimerLoadSet():
+    TimerPrescaleSet(TIMER1_BASE, TIMER_A, 119); // 120MHz/120 = 1MHz 
+    TimerPrescaleSet(TIMER1_BASE, TIMER_B, 119);// timers run at 1MHz ticks now 1 tick from each timer is 1 microsecond, this makes the calculations easier later on 
+    TimerPrescaleSet(TIMER3_BASE, TIMER_A, 119);
+    TimerPrescaleSet(TIMER3_BASE, TIMER_B, 119);
+    TimerPrescaleSet(TIMER4_BASE, TIMER_A, 119);
+    TimerPrescaleSet(TIMER4_BASE, TIMER_B, 119);
+
+    // Then 0xFFFF gives 65.5ms range  it is more than enough for 20ms PWM period 
+    TimerLoadSet(TIMER1_BASE, TIMER_A, 0xFFFF);
+    TimerLoadSet(TIMER1_BASE, TIMER_B, 0xFFFF);
+
+    TimerLoadSet(TIMER3_BASE, TIMER_A, 0xFFFF);
+    TimerLoadSet(TIMER3_BASE, TIMER_B, 0xFFFF);
+
+    TimerLoadSet(TIMER4_BASE, TIMER_A, 0xFFFF);
+    TimerLoadSet(TIMER4_BASE, TIMER_B, 0xFFFF);
+
+
+
+    // edge detection we start on rising edge low to high  for all 6 ccps 
+    TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+    TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+
+    TimerControlEvent(TIMER3_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+    TimerControlEvent(TIMER3_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+
+    TimerControlEvent(TIMER4_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+    TimerControlEvent(TIMER4_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);  
+
+
+    // enable interrupts
+    TimerIntEnable(TIMER1_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
+    TimerIntEnable(TIMER3_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
+    TimerIntEnable(TIMER4_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
+
+    //initialize interrupts 
+    IntEnable(INT_TIMER1A);
+    IntEnable(INT_TIMER1B);
+    IntEnable(INT_TIMER3A);
+    IntEnable(INT_TIMER3B);
+    IntEnable(INT_TIMER4A);
+    IntEnable(INT_TIMER4B);
+
+    IntMasterEnable();//enable global interrupt 
+
+
+    // Start timers
+    TimerEnable(TIMER1_BASE, TIMER_BOTH);
+    TimerEnable(TIMER3_BASE, TIMER_BOTH);
+    TimerEnable(TIMER4_BASE, TIMER_BOTH);
+}
+
+
+void PWM_Output_Init(void)
+{
+    // Enable PWM module + GPIO
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);// enaple the PWM peripherals 
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOG));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOK));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOM));
+
+    // Set PWM clock = system clock / 64
+    SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
+
+    pwmClock = SYSTEM_CLOCK / 64; //use a slower clock cause the you need amounts of counts and you would need 
+    //300000 to get what we need only have 65535
+
+    // Compute period for 50 Hz
+    pwmPeriod = pwmClock / PWM_FREQUENCY;
+
+    //GPIO Congfiguration
+    GPIOPinConfigure(GPIO_PG1_M0PWM5);
+    GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
+
+    GPIOPinConfigure(GPIO_PK4_M0PWM6);
+    GPIOPinTypePWM(GPIO_PORTK_BASE, GPIO_PIN_4);
+
+    GPIOPinConfigure(GPIO_PK5_M0PWM7);
+    GPIOPinTypePWM(GPIO_PORTK_BASE, GPIO_PIN_5);
+
+    GPIOPinConfigure(GPIO_PM0_M0PWM4);
+    GPIOPinTypePWM(GPIO_PORTM_BASE, GPIO_PIN_0);
+
+    // Both generators control 2 outputs 
+    PWMGenConfigure(PWM0_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenConfigure(PWM0_BASE, PWM_GEN_3, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_2, pwmPeriod);
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_3, pwmPeriod);
+
+    // Set them with initial PWM 
+    uint32_t pulse_1000us = (pwmClock * 1000) / 1000000;
+
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse_1000us);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_5, pulse_1000us);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_6, pulse_1000us);// set all 4 with no throwttle setting 
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_7, pulse_1000us);
+
+    // Enable outputs
+    PWMOutputState(PWM0_BASE,PWM_OUT_4_BIT | PWM_OUT_5_BIT | PWM_OUT_6_BIT | PWM_OUT_7_BIT,true);
+
+    // Start generators
+    PWMGenEnable(PWM0_BASE, PWM_GEN_2);
+    PWMGenEnable(PWM0_BASE, PWM_GEN_3);
+}
+
+//how we will update the motor output 
+void Motor_Update(int *cmd)
+{
+   
+    uint32_t pulse;
+    //cmd is in microseconds, need to convert to HZ, 
+   pulse = (pwmClock * (uint32_t)cmd[0]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse);// set the output 
+
+   pulse = (pwmClock * (uint32_t)cmd[1]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_5, pulse);
+
+    pulse = (pwmClock * (uint32_t)cmd[2]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_6, pulse);
+
+    pulse = (pwmClock * (uint32_t)cmd[3]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_7, pulse);
+}
+
+
+void Motor_Output(void *pvParameters)
+{
+    for (;;)
+    {
+        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);
+
+        // good practice btw 
+       int motor_cmd[4];
+
+       taskENTER_CRITICAL();// safely copy things 
+        for (int i = 0; i < 4; i++)
+            motor_cmd[i] = output_vec[i];
+
+        int arm = switch_vec[0];
+        taskEXIT_CRITICAL();
+
+        if (!arm)// if arm off force everything to minimum throttle 
+        {
+         for (int i = 0; i < 4; i++)
+             motor_cmd[i] = 1000;
+        }
+
+        for (int i = 0; i < 4; i++)// clamp everything 
+        {
+        if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
+        if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
+        }
+
+        Motor_Update(motor_cmd);
+        }
+}
+

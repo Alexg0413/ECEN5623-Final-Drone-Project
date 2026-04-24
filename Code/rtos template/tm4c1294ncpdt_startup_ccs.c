@@ -62,6 +62,12 @@ extern void xPortSysTickHandler(void);
 //*****************************************************************************
 // To be added by user
 extern void Timer0AIntHandler(void);
+extern void Timer1AIntHandler(void);
+extern void Timer1BIntHandler(void);
+extern void Timer3AIntHandler(void);
+extern void Timer3BIntHandler(void);
+extern void Timer4AIntHandler(void);
+extern void Timer4BIntHandler(void);
 
 //*****************************************************************************
 //
@@ -111,8 +117,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Watchdog timer
     Timer0AIntHandler,                      // Timer 0 subtimer A                               // added ISR (Ian Mcconachie)
     IntDefaultHandler,                      // Timer 0 subtimer B   
-    IntDefaultHandler,                      // Timer 1 subtimer A
-    IntDefaultHandler,                      // Timer 1 subtimer B
+    Timer1AIntHandler,                      // Timer 1 subtimer A
+    Timer1BIntHandler,                      // Timer 1 subtimer B
     IntDefaultHandler,                      // Timer 2 subtimer A
     IntDefaultHandler,                      // Timer 2 subtimer B
     IntDefaultHandler,                      // Analog Comparator 0
@@ -125,8 +131,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port H
     IntDefaultHandler,                      // UART2 Rx and Tx
     IntDefaultHandler,                      // SSI1 Rx and Tx
-    IntDefaultHandler,                      // Timer 3 subtimer A
-    IntDefaultHandler,                      // Timer 3 subtimer B
+    Timer3AIntHandler,                      // Timer 3 subtimer A
+    Timer3BIntHandler,                      // Timer 3 subtimer B
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
@@ -153,8 +159,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART7 Rx and Tx
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave
-    IntDefaultHandler,                      // Timer 4 subtimer A
-    IntDefaultHandler,                      // Timer 4 subtimer B
+    Timer4AIntHandler,                      // Timer 4 subtimer A
+    Timer4BIntHandler,                      // Timer 4 subtimer B
     IntDefaultHandler,                      // Timer 5 subtimer A
     IntDefaultHandler,                      // Timer 5 subtimer B
     IntDefaultHandler,                      // FPU
@@ -188,7 +194,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // AES 0
     IntDefaultHandler,                      // DES3DES 0
     IntDefaultHandler,                      // LCD Controller 0
-    IntDefaultHandler,                      // Timer 6 subtimer A
+    IntDefaultHandler,                    // Timer 6 subtimer A
     IntDefaultHandler,                      // Timer 6 subtimer B
     IntDefaultHandler,                      // Timer 7 subtimer A
     IntDefaultHandler,                      // Timer 7 subtimer B
