@@ -50,15 +50,6 @@ uint32_t g_ui32SysClock;
 void CAN1IntHandler(void);
 
 
-typedef enum {
-    SYS_OK = 0,
-    SYS_ERROR_CLOCK_FAIL,
-    SYS_ERROR_GPIO_FAIL,
-    SYS_ERROR_CAN_FAIL,
-    SYS_ERROR_UART_FAIL,
-    SYS_ERROR_INVALID_CONFIG
-} SysStatus_t;
-
 // Main function
 int main(void)
 {
@@ -116,7 +107,6 @@ int main(void)
     // Enable CAN
     CANEnable(CAN1_BASE);
 
-    
     // Send SET_DATA command
     UARTprintf("Sending SET_DATA\r\n");
     int i;
