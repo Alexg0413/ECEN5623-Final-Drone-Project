@@ -102,63 +102,29 @@ int main(void)
     // Enable CAN
     CANEnable(CAN1_BASE);
 
-    tCANMsgObject rxMsg;
-    uint8_t rxData[8];
-    rxMsg.ui32MsgID = 0x02;
-    rxMsg.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
-    rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
-    rxMsg.ui32MsgLen = 8;
-    rxMsg.pui8MsgData = rxData;
-    CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
 
-    // // Send SET_DATA command
-    // UARTprintf("Sending SET_DATA\r\n");
-    // int i;
-    // tCANMsgObject txMsg;
-    // uint8_t txData[8];
+    uint8_t numCAN 4;
+    tCANMsgObject rxMsg[numCAN];
+    uint8_t rxData[numCAN][8];
+    uint8_t i = 1;
+    for(i = 0, i < numCAN, i++)
+    {
+        rxMsg[i].ui32MsgID = i + 1;  
+        rxMsg[i].ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+        rxMsg[i].ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+        rxMsg[i].ui32MsgLen = 8;
+        rxMsg[i].pui8MsgData = rxData[i];
+        CANMessageSet(CAN1_BASE, i+1, &rxMsg, MSG_OBJ_TYPE_RX);
+    }
 
-    // txMsg.ui32MsgID = 0x000;   // host → IMX (verify this)
-    // txMsg.ui32Flags = MSG_OBJ_NO_FLAGS;
-    // txMsg.ui32MsgLen = 8;
-    // txMsg.pui8MsgData = txData;
-
-    // uint8_t packet[24];
-
-    // // ---- Header ----
-    // packet[0] = 0xFF;
-    // packet[1] = 0x00;
-    // packet[2] = DID_SET_DATA;   // DID_SET_DATA (LSB)
-    // packet[3] = 0x00;
-
-    // packet[4] = 16;     // payload size
-    // packet[5] = 0x00;
-
-    // packet[6] = 0x00;
-    // packet[7] = 0x00;
-
-    // // ---- Payload ----
-    // uint32_t dataId = DID_INS_1;     // DID_INS_1 (VERIFY THIS)
-    // uint32_t offset = 0;
-    // uint32_t size   = 0;
-    // uint32_t period = 100;   // 10 Hz
-
-    // memcpy(&packet[8],  &dataId, 4);
-    // memcpy(&packet[12], &offset, 4);
-    // memcpy(&packet[16], &size,   4);
-    // memcpy(&packet[20], &period, 4);
-
-    // // ---- Send 3 CAN frames ----
-    // for (i = 0; i < 24; i += 8)
-    // {
-    //     memcpy(txData, &packet[i], 8);
-    //     CANMessageSet(CAN1_BASE, 1, &txMsg, MSG_OBJ_TYPE_TX);
-
-    //     // wait for TX complete (important on Tiva)
-    //     while (CANStatusGet(CAN1_BASE, CAN_STS_TXREQUEST));
-    // }
-    // UARTprintf("Sent SET_DATA\r\n");
-
-
+    // tCANMsgObject rxMsg;
+    // uint8_t rxData[8];
+    // rxMsg.ui32MsgID = 0x02;
+    // rxMsg.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+    // rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+    // rxMsg.ui32MsgLen = 8;
+    // rxMsg.pui8MsgData = rxData;
+    // CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
 
 
     ///////////////////////////////////// semaphores
