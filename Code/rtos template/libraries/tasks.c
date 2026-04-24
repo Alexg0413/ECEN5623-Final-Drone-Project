@@ -179,6 +179,9 @@ void Motor_Output(void *pvParameters)
 
 void Motor_Output(void *pvParameters)
 {
+    #if DEBUG
+            UARTprintf("Entered Task\r\n");
+    #endif
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
     uint32_t ulStart;
     uint32_t ulEnd;
