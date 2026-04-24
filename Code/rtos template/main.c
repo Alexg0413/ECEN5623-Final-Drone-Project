@@ -28,6 +28,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/can.h"
 #include "driverlib/interrupt.h"
+#include "inc/hw_ints.h"
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
@@ -44,6 +45,9 @@ uint32_t g_ui32SysClock;
 #define DID_SET_DATA  3
 #define DID_INS_1     4   // verify in your firmware
 #define DID_IMU       58  // verify
+
+void CAN0IntHandler(void);
+
 
 // Main function
 int main(void)
@@ -96,11 +100,12 @@ int main(void)
 
     // Send SET_DATA
 
-    CANIntRegister(CAN0_BASE, CAN0_Handler);
+    CANIntRegister(CAN0_BASE, CAN0IntHandler);
     IntEnable(INT_CAN0);
     CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
     // Send SET_DATA command
+    int i;
     tCANMsgObject txMsg;
     uint8_t txData[8];
 
@@ -135,7 +140,7 @@ int main(void)
     memcpy(&packet[20], &period, 4);
 
     // ---- Send 3 CAN frames ----
-    for (int i = 0; i < 24; i += 8)
+    for (i = 0; i < 24; i += 8)
     {
         memcpy(txData, &packet[i], 8);
         CANMessageSet(CAN0_BASE, 1, &txMsg, MSG_OBJ_TYPE_TX);
@@ -154,7 +159,6 @@ int main(void)
 
     ///////////////////////////////////// semaphores
     // create semaphores for synchronizing tasks
-    int i;
     SemaphoreHandle_t xSems[NUM_SERVICES];
     for (i = 0; i < NUM_SERVICES; i++)
         xSems[i] = xSemaphoreCreateBinary();
@@ -212,6 +216,7 @@ volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 
 void CAN0IntHandler(void)
 {
+    int i;
     uint32_t status = CANIntStatus(CAN0_BASE, CAN_INT_STS_CAUSE);
     if (status == 2)  // message object ID (your rx object)
     {
@@ -226,7 +231,7 @@ void CAN0IntHandler(void)
         UARTprintf("Printing received CAN Message:\r\n");
         // ---- Your processing ----
         // Example: print or buffer
-        for (int i = 0; i < rxMsg.ui32MsgLen; i++)
+        for (i = 0; i < rxMsg.ui32MsgLen; i++)
         {
             UARTprintf("%02X, " ,rxData[i]);
             // canBuffer[writeIdx++ % RX_BUFFER_SIZE] = rxData[i];

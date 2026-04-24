@@ -62,7 +62,7 @@ extern void xPortSysTickHandler(void);
 //*****************************************************************************
 // To be added by user
 extern void Timer0AIntHandler(void);
-extern void CAN0IntHandler(void)
+extern void CAN0IntHandler(void);
 
 //*****************************************************************************
 //
