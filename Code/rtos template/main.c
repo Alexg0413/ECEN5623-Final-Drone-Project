@@ -144,9 +144,9 @@ int main(void)
     ///////////////////////////////////// semaphores
     // create semaphores for synchronizing tasks
     SemaphoreHandle_t xSems[NUM_SERVICES];
-    int i;
-    for (i = 0; i < NUM_SERVICES; i++)
-        xSems[i] = xSemaphoreCreateBinary();
+    int j;
+    for (j = 0; j < NUM_SERVICES; j++)
+        xSems[j] = xSemaphoreCreateBinary();
 
     // initialize timer interrupt 
     Timer0A_init(xSems, NUM_SERVICES);
