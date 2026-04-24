@@ -35,6 +35,7 @@
 
 #include "driverlib/timer.h"
 #include "inc/hw_memmap.h"
+#include "inc/hw_ints.h"
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/interrupt.h"
@@ -90,11 +91,11 @@ int main(void)
 
 
 
-    PWM_Output_Init();//motor outouts will initialize motors to pwm 1000 microS which is minimum throttle 
+    PWM_Output_Init();//motor outouts will initialize motors to pwm 1000 microS which is minimum throttle
 
-    for (int i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++)
     {
-    output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a 
+    output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
     }
     //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
     SysCtlDelay(g_ui32SysClock / 3 * 2); // 2 seconds from datasheet, this will cause 2 loud beeps then arm 
@@ -115,7 +116,7 @@ int main(void)
 	//////////////////////////////////////////////////////////// create tasks here
     
     // change vTaskX function to task functions once created 
-    xTaskCreate(IMU_input, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
+    xTaskCreate(State_input, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
     xTaskCreate(Radio_Input, "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz - second
     xTaskCreate(Motor_Output, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz - third
     xTaskCreate(Controller, "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz - same as T2
@@ -274,15 +275,16 @@ void Timer4BIntHandler(void)
 
 void Radio_Input(void *pvParameters)
 {
+    int i;
     for (;;)
     {
-        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);// blocks until sequencer releases it 
+        xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);// blocks until sequencer releases it
 
-        uint32_t pw[6];// copy the pulsewidth safely since it could be changed 
+        uint32_t pw[6];// copy the pulsewidth safely since it could be changed
 
         taskENTER_CRITICAL();
-        for (int i = 0; i < 6; i++)
-         pw[i] = pulse_width[i];// copy it over safely 
+        for (i = 0; i < 6; i++)
+         pw[i] = pulse_width[i];// copy it over safely
         taskEXIT_CRITICAL();
 
         // Normalize inputs
@@ -320,31 +322,29 @@ void PWM_Input_Init(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER4);
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);// hardware is off if not on 
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);// hardware is off if not on
 
-    // wait until block is ready 
+    // wait until block is ready
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER1));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER3));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER4));
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOM));
 
-    //make gpio pins to timer capture input 
-    // Timer1 
-    GPIOPinConfigure(GPIO_PB6_T1CCP0);  // CH1
-    GPIOPinConfigure(GPIO_PB7_T1CCP1);  // CH2
-    GPIOPinTypeTimer(GPIO_PORTB_BASE, GPIO_PIN_6 | GPIO_PIN_7);
+    //make gpio pins to timer capture input
+    // Timer1: PD2=T1CCP0, PD3=T1CCP1
+    GPIOPinConfigure(GPIO_PD2_T1CCP0);  // CH1
+    GPIOPinConfigure(GPIO_PD3_T1CCP1);  // CH2
+    GPIOPinTypeTimer(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
-    // Timer3
-    GPIOPinConfigure(GPIO_PC6_T3CCP0);  // CH5
-    GPIOPinConfigure(GPIO_PC7_T3CCP1);  // CH6
-    GPIOPinTypeTimer(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
+    // Timer3: PD4=T3CCP0, PD5=T3CCP1
+    GPIOPinConfigure(GPIO_PD4_T3CCP0);  // CH3
+    GPIOPinConfigure(GPIO_PD5_T3CCP1);  // CH4
+    GPIOPinTypeTimer(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);
 
-    // Timer 4
+    // Timer4: PM4=T4CCP0, PM5=T4CCP1
     GPIOPinConfigure(GPIO_PM4_T4CCP0);  // CH5
     GPIOPinConfigure(GPIO_PM5_T4CCP1);  // CH6
     GPIOPinTypeTimer(GPIO_PORTM_BASE, GPIO_PIN_4 | GPIO_PIN_5);
@@ -418,13 +418,11 @@ void PWM_Output_Init(void)
     // Enable PWM module + GPIO
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);// enaple the PWM peripherals 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);// enable the PWM peripherals
 
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOG));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOK));
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOM));
 
     // Set PWM clock = system clock / 64
     SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
@@ -436,17 +434,13 @@ void PWM_Output_Init(void)
     pwmPeriod = pwmClock / PWM_FREQUENCY;
 
     //GPIO Congfiguration
+    GPIOPinConfigure(GPIO_PG0_M0PWM4);
     GPIOPinConfigure(GPIO_PG1_M0PWM5);
-    GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
+    GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     GPIOPinConfigure(GPIO_PK4_M0PWM6);
-    GPIOPinTypePWM(GPIO_PORTK_BASE, GPIO_PIN_4);
-
     GPIOPinConfigure(GPIO_PK5_M0PWM7);
-    GPIOPinTypePWM(GPIO_PORTK_BASE, GPIO_PIN_5);
-
-    GPIOPinConfigure(GPIO_PM0_M0PWM4);
-    GPIOPinTypePWM(GPIO_PORTM_BASE, GPIO_PIN_0);
+    GPIOPinTypePWM(GPIO_PORTK_BASE, GPIO_PIN_4 | GPIO_PIN_5);
 
     // Both generators control 2 outputs 
     PWMGenConfigure(PWM0_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
@@ -493,27 +487,27 @@ void Motor_Update(int *cmd)
 
 void Motor_Output(void *pvParameters)
 {
+    int i;
+    int motor_cmd[4];
+    int arm;
     for (;;)
     {
         xSemaphoreTake((SemaphoreHandle_t)pvParameters, portMAX_DELAY);
 
-        // good practice btw 
-       int motor_cmd[4];
-
-       taskENTER_CRITICAL();// safely copy things 
-        for (int i = 0; i < 4; i++)
+        taskENTER_CRITICAL();// safely copy things
+        for (i = 0; i < 4; i++)
             motor_cmd[i] = output_vec[i];
 
-        int arm = switch_vec[0];
+        arm = switch_vec[0];
         taskEXIT_CRITICAL();
 
-        if (!arm)// if arm off force everything to minimum throttle 
+        if (!arm)// if arm off force everything to minimum throttle
         {
-         for (int i = 0; i < 4; i++)
+         for (i = 0; i < 4; i++)
              motor_cmd[i] = 1000;
         }
 
-        for (int i = 0; i < 4; i++)// clamp everything 
+        for (i = 0; i < 4; i++)// clamp everything
         {
         if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
         if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
