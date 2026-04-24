@@ -103,28 +103,42 @@ int main(void)
     CANEnable(CAN1_BASE);
 
 
-    uint8_t numCAN 4;
-    tCANMsgObject rxMsg[numCAN];
-    uint8_t rxData[numCAN][8];
-    uint8_t i = 1;
-    for(i = 0, i < numCAN, i++)
-    {
-        rxMsg[i].ui32MsgID = i + 1;  
-        rxMsg[i].ui32MsgIDMask = 0x7FF;   // exact 11-bit match
-        rxMsg[i].ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
-        rxMsg[i].ui32MsgLen = 8;
-        rxMsg[i].pui8MsgData = rxData[i];
-        CANMessageSet(CAN1_BASE, i+1, &rxMsg, MSG_OBJ_TYPE_RX);
-    }
+    
+    tCANMsgObject rxMsg1;
+    uint8_t rxData1[8];
+    rxMsg1.ui32MsgID = 0x01;
+    rxMsg1.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+    rxMsg1.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+    rxMsg1.ui32MsgLen = 8;
+    rxMsg1.pui8MsgData = rxData1;
+    CANMessageSet(CAN1_BASE, 1, &rxMsg1, MSG_OBJ_TYPE_RX);
 
-    // tCANMsgObject rxMsg;
-    // uint8_t rxData[8];
-    // rxMsg.ui32MsgID = 0x02;
-    // rxMsg.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
-    // rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
-    // rxMsg.ui32MsgLen = 8;
-    // rxMsg.pui8MsgData = rxData;
-    // CANMessageSet(CAN1_BASE, 1, &rxMsg, MSG_OBJ_TYPE_RX);
+    tCANMsgObject rxMsg2;
+    uint8_t rxData2[8];
+    rxMsg2.ui32MsgID = 0x01;
+    rxMsg2.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+    rxMsg2.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+    rxMsg2.ui32MsgLen = 8;
+    rxMsg2.pui8MsgData = rxData2;
+    CANMessageSet(CAN1_BASE, 1, &rxMsg2, MSG_OBJ_TYPE_RX);
+
+    tCANMsgObject rxMsg3;
+    uint8_t rxData3[8];
+    rxMsg3.ui32MsgID = 0x01;
+    rxMsg3.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+    rxMsg3.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+    rxMsg3.ui32MsgLen = 8;
+    rxMsg3.pui8MsgData = rxData3;
+    CANMessageSet(CAN1_BASE, 1, &rxMsg3, MSG_OBJ_TYPE_RX);
+
+    tCANMsgObject rxMsg4;
+    uint8_t rxData4[8];
+    rxMsg4.ui32MsgID = 0x01;
+    rxMsg4.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
+    rxMsg4.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+    rxMsg4.ui32MsgLen = 8;
+    rxMsg4.pui8MsgData = rxData4;
+    CANMessageSet(CAN1_BASE, 1, &rxMsg4, MSG_OBJ_TYPE_RX);
 
 
     ///////////////////////////////////// semaphores
