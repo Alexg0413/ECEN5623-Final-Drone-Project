@@ -115,7 +115,7 @@ int main(void)
 
     tCANMsgObject rxMsg2;
     uint8_t rxData2[8];
-    rxMsg2.ui32MsgID = 0x01;
+    rxMsg2.ui32MsgID = 0x02;
     rxMsg2.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
     rxMsg2.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg2.ui32MsgLen = 8;
@@ -124,7 +124,7 @@ int main(void)
 
     tCANMsgObject rxMsg3;
     uint8_t rxData3[8];
-    rxMsg3.ui32MsgID = 0x01;
+    rxMsg3.ui32MsgID = 0x03;
     rxMsg3.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
     rxMsg3.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg3.ui32MsgLen = 8;
@@ -133,7 +133,7 @@ int main(void)
 
     tCANMsgObject rxMsg4;
     uint8_t rxData4[8];
-    rxMsg4.ui32MsgID = 0x01;
+    rxMsg4.ui32MsgID = 0x04;
     rxMsg4.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
     rxMsg4.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg4.ui32MsgLen = 8;
