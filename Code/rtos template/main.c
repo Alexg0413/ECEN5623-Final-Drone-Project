@@ -203,7 +203,7 @@ void CAN1IntHandler(void)
 {
     int i;
     uint32_t status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
-    if (status == 1)  // mailbox 1 (RX ID 0x02)
+    if (status <= 4)  // mailbox 1 (RX ID 0x02)
     {
         tCANMsgObject rxMsg;
         uint8_t rxData[8];
@@ -213,7 +213,7 @@ void CAN1IntHandler(void)
         // Read message (clears the pending interrupt for this mailbox)
         CANMessageGet(CAN1_BASE, 1, &rxMsg, true);
 
-        UARTprintf("Printing received CAN Message:\r\n");
+        UARTprintf("Printing received CAN Message Status %u:\r\n", status);
         // ---- Your processing ----
         // Example: print or buffer
         for (i = 0; i < rxMsg.ui32MsgLen; i++)
@@ -223,7 +223,7 @@ void CAN1IntHandler(void)
         }
         UARTprintf("\r\n");
     }
-    else 
+    else
     {
         UARTprintf("Status Not 2, %u\r\n", status);
     }   
