@@ -94,17 +94,19 @@ int main(void)
     GPIOPinTypeCAN(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     // init CAN and set bit rate to 1 Mbps
+    UARTprintf("Initalizing CAN0_BASE\r\n");
     CANInit(CAN0_BASE);
     CANBitRateSet(CAN0_BASE, g_ui32SysClock, 1000000); // 1 Mbps
     CANEnable(CAN0_BASE);
 
     // Send SET_DATA
-
+    UARTprintf("Registering CAN0_BASE\r\n");
     CANIntRegister(CAN0_BASE, CAN0IntHandler);
     IntEnable(INT_CAN0);
     CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
     // Send SET_DATA command
+    UARTprintf("Sending SET_DATA\r\n");
     int i;
     tCANMsgObject txMsg;
     uint8_t txData[8];
@@ -148,10 +150,12 @@ int main(void)
         // wait for TX complete (important on Tiva)
         while (CANStatusGet(CAN0_BASE, CAN_STS_TXREQUEST));
     }
+    UARTprintf("Sent SET_DATA\r\n");
 
     // ---------------------------
     // Interrupt Driven
     // ---------------------------
+    UARTprintf("Enabling CAN0 Interrupt\r\n");
     IntEnable(INT_CAN0);
     CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
