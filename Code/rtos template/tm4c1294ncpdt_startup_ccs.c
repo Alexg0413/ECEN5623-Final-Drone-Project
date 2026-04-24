@@ -62,8 +62,8 @@ extern void xPortSysTickHandler(void);
 //*****************************************************************************
 // To be added by user
 extern void Timer0AIntHandler(void);
-extern void Timer1AIntHandler(void);
-extern void Timer1BIntHandler(void);
+extern void Timer5AIntHandler(void);
+extern void Timer5BIntHandler(void);
 extern void Timer3AIntHandler(void);
 extern void Timer3BIntHandler(void);
 extern void Timer4AIntHandler(void);
@@ -117,8 +117,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Watchdog timer
     Timer0AIntHandler,                      // Timer 0 subtimer A                               // added ISR (Ian Mcconachie)
     IntDefaultHandler,                      // Timer 0 subtimer B   
-    Timer1AIntHandler,                      // Timer 1 subtimer A
-    Timer1BIntHandler,                      // Timer 1 subtimer B
+    IntDefaultHandler,                      // Timer 1 subtimer A
+    IntDefaultHandler,                      // Timer 1 subtimer B
     IntDefaultHandler,                      // Timer 2 subtimer A
     IntDefaultHandler,                      // Timer 2 subtimer B
     IntDefaultHandler,                      // Analog Comparator 0
@@ -161,8 +161,8 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // I2C3 Master and Slave
     Timer4AIntHandler,                      // Timer 4 subtimer A
     Timer4BIntHandler,                      // Timer 4 subtimer B
-    IntDefaultHandler,                      // Timer 5 subtimer A
-    IntDefaultHandler,                      // Timer 5 subtimer B
+    Timer5AIntHandler,                      // Timer 5 subtimer A
+    Timer5BIntHandler,                      // Timer 5 subtimer B
     IntDefaultHandler,                      // FPU
     0,                                      // Reserved
     0,                                      // Reserved

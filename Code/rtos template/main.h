@@ -42,8 +42,8 @@ void PWM_Input_Init(void);
 void PWM_Output_Init(void);
 
 // Timer ISR handlers (must match vector table)
-void Timer1AIntHandler(void);
-void Timer1BIntHandler(void);
+void Timer5AIntHandler(void);
+void Timer5BIntHandler(void);
 void Timer4AIntHandler(void);
 void Timer4BIntHandler(void);
 void Timer3AIntHandler(void);

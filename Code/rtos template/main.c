@@ -40,8 +40,8 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/interrupt.h"
 
-void Timer1AIntHandler(void);
-void Timer1BIntHandler(void);
+void Timer5AIntHandler(void);
+void Timer5BIntHandler(void);
 void Timer3AIntHandler(void);//handlers for timers using ccp this will map to different individual channels 
 void Timer3BIntHandler(void);
 void Timer4AIntHandler(void);
@@ -148,43 +148,43 @@ void __error__(char *pcFilename, uint32_t ui32Line)
     }
 }
 
-void Timer1AIntHandler(void)
+void Timer5AIntHandler(void)
 {
-    TimerIntClear(TIMER1_BASE, TIMER_CAPA_EVENT);// clear interrupt once triggered
+    TimerIntClear(TIMER5_BASE, TIMER_CAPA_EVENT);// clear interrupt once triggered
 
-    uint32_t time = TimerValueGet(TIMER1_BASE, TIMER_A);// to be used for calculations 
+    uint32_t time = TimerValueGet(TIMER5_BASE, TIMER_A);// to be used for calculations 
 
     if (rising_edge[0])// if it rises then we know its the start of the pwm 
     {
         rise_time[0] = time;
-        TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
+        TimerControlEvent(TIMER5_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
         rising_edge[0] = false;
     }
     else
     {
         pulse_width[0] = rise_time[0] - time;  //once you go low it is over so you can calculate pulse width
-        TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);// switch back to low to high edge detection
+        TimerControlEvent(TIMER5_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);// switch back to low to high edge detection
         rising_edge[0] = true;
     }
 }
 
 
-void Timer1BIntHandler(void)
+void Timer5BIntHandler(void)
 {
-    TimerIntClear(TIMER1_BASE, TIMER_CAPB_EVENT);
+    TimerIntClear(TIMER5_BASE, TIMER_CAPB_EVENT);
 
-    uint32_t time = TimerValueGet(TIMER1_BASE, TIMER_B);
+    uint32_t time = TimerValueGet(TIMER5_BASE, TIMER_B);
 
     if (rising_edge[1])
     {
         rise_time[1] = time;
-        TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_NEG_EDGE);
+        TimerControlEvent(TIMER5_BASE, TIMER_B, TIMER_EVENT_NEG_EDGE);
         rising_edge[1] = false;
     }
     else
     {
         pulse_width[1] = rise_time[1] - time;
-        TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+        TimerControlEvent(TIMER5_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
         rising_edge[1] = true;
     }
 }
@@ -317,32 +317,38 @@ void PWM_Input_Init(void)
 
     // we need to turn on 6 timers that will read the PWM of 6 channels 
 
-    //turn on hardware blocks
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+   // Turn on hardware blocks (ONLY what you actually use)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER5);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER4);
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);// hardware is off if not on
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);  // for PA6, PA7
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);  // for PB2, PB3
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);  // for PM4, PM5
 
     // wait until block is ready
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER1));
+    // Wait until ready
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER5));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER3));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER4));
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA));
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOM));
 
-    //make gpio pins to timer capture input
-    // Timer1: PD2=T1CCP0, PD3=T1CCP1
-    GPIOPinConfigure(GPIO_PD2_T1CCP0);  // CH1
-    GPIOPinConfigure(GPIO_PD3_T1CCP1);  // CH2
-    GPIOPinTypeTimer(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
+    //make gpio pins to timer capture input 
+    // Timer5
+    GPIOPinConfigure(GPIO_PB2_T5CCP0);  // CH1
+    GPIOPinConfigure(GPIO_PB3_T5CCP1);  // CH2
+    GPIOPinTypeTimer(GPIO_PORTB_BASE, GPIO_PIN_2 | GPIO_PIN_3); 
 
-    // Timer3: PD4=T3CCP0, PD5=T3CCP1
-    GPIOPinConfigure(GPIO_PD4_T3CCP0);  // CH3
-    GPIOPinConfigure(GPIO_PD5_T3CCP1);  // CH4
-    GPIOPinTypeTimer(GPIO_PORTD_BASE, GPIO_PIN_4 | GPIO_PIN_5);
+    // Timer3
+    GPIOPinConfigure(GPIO_PA6_T3CCP0);  // CH3
+    GPIOPinConfigure(GPIO_PA7_T3CCP1);  // CH4
+    GPIOPinTypeTimer(GPIO_PORTA_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 
     // Timer4: PM4=T4CCP0, PM5=T4CCP1
     GPIOPinConfigure(GPIO_PM4_T4CCP0);  // CH5
@@ -352,7 +358,7 @@ void PWM_Input_Init(void)
 
     // congigure timers to be in capture mode check edges, measure time between edges 
 
-    TimerConfigure(TIMER1_BASE, TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
+    TimerConfigure(TIMER5_BASE, TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
 
     TimerConfigure(TIMER3_BASE, TIMER_CFG_SPLIT_PAIR |TIMER_CFG_A_CAP_TIME |TIMER_CFG_B_CAP_TIME);
 
@@ -360,16 +366,16 @@ void PWM_Input_Init(void)
 
 
     // Add after each TimerConfigure(), before TimerLoadSet():
-    TimerPrescaleSet(TIMER1_BASE, TIMER_A, 119); // 120MHz/120 = 1MHz 
-    TimerPrescaleSet(TIMER1_BASE, TIMER_B, 119);// timers run at 1MHz ticks now 1 tick from each timer is 1 microsecond, this makes the calculations easier later on 
+    TimerPrescaleSet(TIMER5_BASE, TIMER_A, 119); // 120MHz/120 = 1MHz 
+    TimerPrescaleSet(TIMER5_BASE, TIMER_B, 119);// timers run at 1MHz ticks now 1 tick from each timer is 1 microsecond, this makes the calculations easier later on 
     TimerPrescaleSet(TIMER3_BASE, TIMER_A, 119);
     TimerPrescaleSet(TIMER3_BASE, TIMER_B, 119);
     TimerPrescaleSet(TIMER4_BASE, TIMER_A, 119);
     TimerPrescaleSet(TIMER4_BASE, TIMER_B, 119);
 
     // Then 0xFFFF gives 65.5ms range  it is more than enough for 20ms PWM period 
-    TimerLoadSet(TIMER1_BASE, TIMER_A, 0xFFFF);
-    TimerLoadSet(TIMER1_BASE, TIMER_B, 0xFFFF);
+    TimerLoadSet(TIMER5_BASE, TIMER_A, 0xFFFF);
+    TimerLoadSet(TIMER5_BASE, TIMER_B, 0xFFFF);
 
     TimerLoadSet(TIMER3_BASE, TIMER_A, 0xFFFF);
     TimerLoadSet(TIMER3_BASE, TIMER_B, 0xFFFF);
@@ -380,8 +386,8 @@ void PWM_Input_Init(void)
 
 
     // edge detection we start on rising edge low to high  for all 6 ccps 
-    TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
-    TimerControlEvent(TIMER1_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
+    TimerControlEvent(TIMER5_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+    TimerControlEvent(TIMER5_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
 
     TimerControlEvent(TIMER3_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
     TimerControlEvent(TIMER3_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
@@ -391,23 +397,31 @@ void PWM_Input_Init(void)
 
 
     // enable interrupts
-    TimerIntEnable(TIMER1_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
+    TimerIntEnable(TIMER5_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
     TimerIntEnable(TIMER3_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
     TimerIntEnable(TIMER4_BASE, TIMER_CAPA_EVENT | TIMER_CAPB_EVENT);
 
     //initialize interrupts 
-    IntEnable(INT_TIMER1A);
-    IntEnable(INT_TIMER1B);
+    IntEnable(INT_TIMER5A);
+    IntEnable(INT_TIMER5B);
     IntEnable(INT_TIMER3A);
     IntEnable(INT_TIMER3B);
     IntEnable(INT_TIMER4A);
     IntEnable(INT_TIMER4B);
+    
+    IntPrioritySet(INT_TIMER5A, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    IntPrioritySet(INT_TIMER5B, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    IntPrioritySet(INT_TIMER3A, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    IntPrioritySet(INT_TIMER3B, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    IntPrioritySet(INT_TIMER4A, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    IntPrioritySet(INT_TIMER4B, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
+    
     IntMasterEnable();//enable global interrupt 
 
 
     // Start timers
-    TimerEnable(TIMER1_BASE, TIMER_BOTH);
+    TimerEnable(TIMER5_BASE, TIMER_BOTH);
     TimerEnable(TIMER3_BASE, TIMER_BOTH);
     TimerEnable(TIMER4_BASE, TIMER_BOTH);
 }
