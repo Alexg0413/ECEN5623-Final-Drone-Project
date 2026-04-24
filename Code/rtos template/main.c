@@ -50,51 +50,73 @@ uint32_t g_ui32SysClock;
 void CAN1IntHandler(void);
 
 
+typedef enum {
+    SYS_OK = 0,
+    SYS_ERROR_CLOCK_FAIL,
+    SYS_ERROR_GPIO_FAIL,
+    SYS_ERROR_CAN_FAIL,
+    SYS_ERROR_UART_FAIL,
+    SYS_ERROR_INVALID_CONFIG
+} SysStatus_t;
+
 // Main function
 int main(void)
 {
+    uint32_t result = 0;
 
-    ///////////////////////////////////// 
-    //initializes the system 
-    /////////////////////////////////////
+    result = SysCtlClockFreqSet(
+        SYSCTL_XTAL_25MHZ |
+        SYSCTL_OSC_MAIN |
+        SYSCTL_USE_PLL |
+        SYSCTL_CFG_VCO_480,
+        120000000
+    );
 
-    ///////////////////////////////////// Clock 
-    // Initialize system clock to 120 MHz
-	g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-	                                             SYSCTL_OSC_MAIN |
-	                                             SYSCTL_USE_PLL |
-	                                             SYSCTL_CFG_VCO_480), 120000000);
+    if(result == 0)
+    {
+        UARTprintf("SysClock Error\r\n");
+        while(1); // critical failure halt
+    }
 
+    g_ui32SysClock = result;
 
-    ///////////////////////////////////// UART printing
-    // UART0 on PA0/PA1 via debug VCOM (JP4&5 set to UART)
     UART0_init(g_ui32SysClock);
-
-    // ---------------------------
-    // Enable CAN1 (expansion header PB0/PB1)
-    // ---------------------------
     SysCtlPeripheralEnable(SYSCTL_PERIPH_CAN1);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_CAN1));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
-    // Configure GPIO Pins for CAN1 (PB0=RX, PB1=TX)
+    // CAN1 Pin mux
     GPIOPinConfigure(GPIO_PB0_CAN1RX);
     GPIOPinConfigure(GPIO_PB1_CAN1TX);
     GPIOPinTypeCAN(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
-    // init CAN and set bit rate to 1 Mbps
-    UARTprintf("Initalizing CAN1_BASE\r\n");
+    // CAN1 Init
+    UARTprintf("Initializing CAN1\r\n");
     CANInit(CAN1_BASE);
-    CANBitRateSet(CAN1_BASE, g_ui32SysClock, 1000000); // 1 Mbps
+    CANBitRateSet(CAN1_BASE, g_ui32SysClock, 1000000);
+
+    // Interrupt registration (check return)
+    UARTprintf("Registering CAN1 interrupt\r\n");
+    result = CANIntRegister(CAN1_BASE, CAN1IntHandler);
+    if(result != 0)
+    {
+        UARTprintf("CAN ISR Register Error\r\n");
+        while(1);
+    }
+
+    // Interrupt enable
+    IntEnable(INT_CAN1);
+    CANIntEnable(CAN1_BASE,
+                CAN_INT_MASTER |
+                CAN_INT_ERROR |
+                CAN_INT_STATUS);
+
+
+    // Enable CAN
     CANEnable(CAN1_BASE);
 
-    // Send SET_DATA
-    UARTprintf("Registering CAN1_BASE\r\n");
-    CANIntRegister(CAN1_BASE, CAN1IntHandler);
-    IntEnable(INT_CAN1);
-    CANIntEnable(CAN1_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
-
+    
     // Send SET_DATA command
     UARTprintf("Sending SET_DATA\r\n");
     int i;
