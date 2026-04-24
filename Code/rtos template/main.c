@@ -105,7 +105,7 @@ int main(void)
     tCANMsgObject rxMsg;
     uint8_t rxData[8];
     rxMsg.ui32MsgID = 0x02;
-    rxMsg.ui32MsgIDMask = 0x7FF;   // match full standard ID
+    rxMsg.ui32MsgIDMask = 0x7FF;   // exact 11-bit match
     rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
     rxMsg.ui32MsgLen = 8;
     rxMsg.pui8MsgData = rxData;
@@ -158,12 +158,6 @@ int main(void)
     // }
     // UARTprintf("Sent SET_DATA\r\n");
 
-    // ---------------------------
-    // Interrupt Driven
-    // ---------------------------
-    UARTprintf("Enabling CAN0 Interrupt\r\n");
-    IntEnable(INT_CAN1);
-    CANIntEnable(CAN1_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);
 
 
 
@@ -228,16 +222,16 @@ volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 void CAN1IntHandler(void)
 {
     int i;
-    uint32_t status = CANIntStatus(CAN1_BASE, CAN_STS_CONTROL);
-    if (status == 2)  // message object ID (your rx object)
+    uint32_t status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
+    if (status == 1)  // mailbox 1 (RX ID 0x02)
     {
         tCANMsgObject rxMsg;
         uint8_t rxData[8];
 
         rxMsg.pui8MsgData = rxData;
 
-        // Read message (this clears interrupt for that object)
-        CANMessageGet(CAN1_BASE, 2, &rxMsg, true);
+        // Read message (clears the pending interrupt for this mailbox)
+        CANMessageGet(CAN1_BASE, 1, &rxMsg, true);
 
         UARTprintf("Printing received CAN Message:\r\n");
         // ---- Your processing ----
