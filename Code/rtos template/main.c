@@ -257,22 +257,27 @@ void CAN1IntHandler(void)
 
 void State_input(void)
 {
-    state_vec[1] = bytes_to_float(can1.data)
-    state_vec[2] = bytes_to_float(can1.data)
-    state_vec[3] = bytes_to_float(can1.data)
-    state_vec[4] = bytes_to_float(can1.data)
-    state_vec[5] = bytes_to_float(can1.data)
-    state_vec[6] = bytes_to_float(can1.data)
-    state_vec[7] = bytes_to_float(can1.data)
-    state_vec[8] = bytes_to_float(can1.data)
-    state_vec[9] = bytes_to_float(can1.data)
+    // state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration (floats)
+    float euler1 = bytes_to_float(can1.data[0], 2, 10000)
+    float euler2 = bytes_to_float(can1.data[2], 2, 10000)
+    float euler3 = bytes_to_float(can1.data[4], 2, 10000)
+    float p = bytes_to_float(can2.data[0], 2, 1000);
+    float q = bytes_to_float(can3.data[0], 2, 1000);
+    float r = bytes_to_float(can4.data[0], 2, 1000);
+    float u_dot = bytes_to_float(can2.data[2], 2, 100);
+    float v_dot = bytes_to_float(can3.data[2], 2, 100);
+    float w_dot = bytes_to_float(can4.data[2], 2, 100);
+
+    UARTprintf("Euler Angles: %f,%f,%f\r\n", euler1, euler2, euler3)
+    UARTprintf("Angular Rates: %f,%f,%f\r\n", p, q, r)
+    UARTprintf("Velocities: %f,%f,%f\r\n", u_dot, v_dot, w_dot)
 }
 
 
 // Help function
-float bytes_to_float(uint8_t *bytes) {
-    float f;
-    // Copies 4 bytes from the array into the memory of the float
-    memcpy(&f, bytes, sizeof(f));
+float bytes_to_float(uint8_t *bytes, uint8_t size, float scale_factor) {
+    int16_t raw_val = 0;
+    memcpy(bytes, raw_val, size);
+    float f = raw_val / scale_factor;
     return f;
 }
