@@ -47,6 +47,11 @@ uint32_t g_ui32SysClock;
 #define DID_INS_1     4   // verify in your firmware
 #define DID_IMU       58  // verify
 
+volatile CAN_Frame_t can1;
+volatile CAN_Frame_t can2;
+volatile CAN_Frame_t can3;
+volatile CAN_Frame_t can4;
+
 void CAN1IntHandler(void);
 
 
@@ -208,12 +213,10 @@ void CAN1IntHandler(void)
 
     if(status == 0)
     {
-        // status interrupt (errors, etc.)
-        uint32_t err = CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
+        CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
         return;
     }
 
-    // status = message object number (THIS is key)
     tCANMsgObject msg;
     uint8_t data[8];
 
@@ -221,33 +224,55 @@ void CAN1IntHandler(void)
 
     CANMessageGet(CAN1_BASE, status, &msg, true);
 
-    // NOW you can read ID
-    uint32_t canID = msg.ui32MsgID;
-
-    // handle based on ID
-    switch(canID)
+    switch(msg.ui32MsgID)
     {
         case 0x01:
-            UARTprintf("Read CAN ID 0x01\r\n");
+            memcpy((void*)can1.data, data, 8);
+            can1.id = 0x01;
+            can1.valid = 1;
             break;
 
         case 0x02:
-            UARTprintf("Read CAN ID 0x02\r\n");
+            memcpy((void*)can2.data, data, 8);
+            can2.id = 0x02;
+            can2.valid = 1;
             break;
 
         case 0x03:
-            UARTprintf("Read CAN ID 0x03\r\n");
+            memcpy((void*)can3.data, data, 8);
+            can3.id = 0x03;
+            can3.valid = 1;
             break;
 
         case 0x04:
-            UARTprintf("Read CAN ID 0x04\r\n");
-            break;
-
-        default:
-            // unknown frame
-            UARTprintf("Unknown CAN ID %u\r\n", canID);
+            memcpy((void*)can4.data, data, 8);
+            can4.id = 0x04;
+            can4.valid = 1;
             break;
     }
 
     CANIntClear(CAN1_BASE, status);
+}
+
+
+void State_input(void)
+{
+    state_vec[1] = bytes_to_float(can1.data)
+    state_vec[2] = bytes_to_float(can1.data)
+    state_vec[3] = bytes_to_float(can1.data)
+    state_vec[4] = bytes_to_float(can1.data)
+    state_vec[5] = bytes_to_float(can1.data)
+    state_vec[6] = bytes_to_float(can1.data)
+    state_vec[7] = bytes_to_float(can1.data)
+    state_vec[8] = bytes_to_float(can1.data)
+    state_vec[9] = bytes_to_float(can1.data)
+}
+
+
+// Help function
+float bytes_to_float(uint8_t *bytes) {
+    float f;
+    // Copies 4 bytes from the array into the memory of the float
+    memcpy(&f, bytes, sizeof(f));
+    return f;
 }
