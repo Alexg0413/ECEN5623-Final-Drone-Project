@@ -268,9 +268,19 @@ void State_input(void)
     float v_dot = bytes_to_float(can3.data[2], 2, 100);
     float w_dot = bytes_to_float(can4.data[2], 2, 100);
 
-    UARTprintf("Euler Angles: %f,%f,%f\r\n", euler1, euler2, euler3)
-    UARTprintf("Angular Rates: %f,%f,%f\r\n", p, q, r)
-    UARTprintf("Velocities: %f,%f,%f\r\n", u_dot, v_dot, w_dot)
+    UARTprintf("Euler Angles: %f,%f,%f\r\n", euler1, euler2, euler3);
+    UARTprintf("Angular Rates: %f,%f,%f\r\n", p, q, r);
+    UARTprintf("Velocities: %f,%f,%f\r\n", u_dot, v_dot, w_dot);
+
+    state[0] = euler1;
+    state[1] = euler2;
+    state[2] = euler3;
+    state[3] = p;
+    state[4] = q;
+    state[5] = r;
+    state[6] = u_dot;
+    state[7] = v_dot;
+    state[8] = w_dot;
 }
 
 
