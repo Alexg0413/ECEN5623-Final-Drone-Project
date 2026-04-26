@@ -47,6 +47,11 @@ uint32_t g_ui32SysClock;
 #define DID_INS_1     4   // verify in your firmware
 #define DID_IMU       58  // verify
 
+volatile CAN_Frame_t can1;
+volatile CAN_Frame_t can2;
+volatile CAN_Frame_t can3;
+volatile CAN_Frame_t can4;
+
 void CAN1IntHandler(void);
 
 
@@ -208,12 +213,10 @@ void CAN1IntHandler(void)
 
     if(status == 0)
     {
-        // status interrupt (errors, etc.)
-        uint32_t err = CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
+        CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
         return;
     }
 
-    // status = message object number (THIS is key)
     tCANMsgObject msg;
     uint8_t data[8];
 
@@ -221,33 +224,70 @@ void CAN1IntHandler(void)
 
     CANMessageGet(CAN1_BASE, status, &msg, true);
 
-    // NOW you can read ID
-    uint32_t canID = msg.ui32MsgID;
-
-    // handle based on ID
-    switch(canID)
+    switch(msg.ui32MsgID)
     {
         case 0x01:
-            UARTprintf("Read CAN ID 0x01\r\n");
+            memcpy((void*)can1.data, data, 8);
+            can1.id = 0x01;
+            can1.valid = 1;
             break;
 
         case 0x02:
-            UARTprintf("Read CAN ID 0x02\r\n");
+            memcpy((void*)can2.data, data, 8);
+            can2.id = 0x02;
+            can2.valid = 1;
             break;
 
         case 0x03:
-            UARTprintf("Read CAN ID 0x03\r\n");
+            memcpy((void*)can3.data, data, 8);
+            can3.id = 0x03;
+            can3.valid = 1;
             break;
 
         case 0x04:
-            UARTprintf("Read CAN ID 0x04\r\n");
-            break;
-
-        default:
-            // unknown frame
-            UARTprintf("Unknown CAN ID %u\r\n", canID);
+            memcpy((void*)can4.data, data, 8);
+            can4.id = 0x04;
+            can4.valid = 1;
             break;
     }
 
     CANIntClear(CAN1_BASE, status);
+}
+
+
+void State_input(void)
+{
+    // state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration (floats)
+    float euler1 = bytes_to_float(can1.data[0], 2, 10000)
+    float euler2 = bytes_to_float(can1.data[2], 2, 10000)
+    float euler3 = bytes_to_float(can1.data[4], 2, 10000)
+    float p = bytes_to_float(can2.data[0], 2, 1000);
+    float q = bytes_to_float(can3.data[0], 2, 1000);
+    float r = bytes_to_float(can4.data[0], 2, 1000);
+    float u_dot = bytes_to_float(can2.data[2], 2, 100);
+    float v_dot = bytes_to_float(can3.data[2], 2, 100);
+    float w_dot = bytes_to_float(can4.data[2], 2, 100);
+
+    UARTprintf("Euler Angles: %f,%f,%f\r\n", euler1, euler2, euler3);
+    UARTprintf("Angular Rates: %f,%f,%f\r\n", p, q, r);
+    UARTprintf("Velocities: %f,%f,%f\r\n", u_dot, v_dot, w_dot);
+
+    state[0] = euler1;
+    state[1] = euler2;
+    state[2] = euler3;
+    state[3] = p;
+    state[4] = q;
+    state[5] = r;
+    state[6] = u_dot;
+    state[7] = v_dot;
+    state[8] = w_dot;
+}
+
+
+// Help function
+float bytes_to_float(uint8_t *bytes, uint8_t size, float scale_factor) {
+    int16_t raw_val = 0;
+    memcpy(bytes, raw_val, size);
+    float f = raw_val / scale_factor;
+    return f;
 }
