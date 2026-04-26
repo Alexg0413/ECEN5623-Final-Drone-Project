@@ -179,111 +179,33 @@ void Motor_Output(void *pvParameters)
 
 void Motor_Output(void *pvParameters)
 {
-    #if DEBUG
-            UARTprintf("Entered Task\r\n");
-    #endif
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    uint32_t ulStart;
-    uint32_t ulEnd;
-    uint32_t ulThread_id = 3;
-    int motor_cmd[4];
-    int arm;
-    int i;
-
-    static int test_done = 0;
+    int motor_cmd[4] = {1600, 1600, 1600, 1600};
 
 #if DEBUG
+    UARTprintf("Motor_Output task started\r\n");
     static uint32_t lastPrint = 0;
 #endif
 
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
-        ulStart = getTime_100ns();
-
-    
-        if (!test_done)
-        {
-#if DEBUG
-            UARTprintf("Test\r\n");
-#endif
-
-            uint32_t start = xTaskGetTickCount();
-
-            while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(500))
-            {
-                for (i = 0; i < 4; i++)
-                    motor_cmd[i] = 1600;
-
-                Motor_Update(motor_cmd);
-
-#if DEBUG
-                uint32_t now = xTaskGetTickCount();
-                if ((now - lastPrint) > pdMS_TO_TICKS(100))
-                {
-                    UARTprintf("TEST PWM: %d %d %d %d\r\n",
-                               motor_cmd[0],
-                               motor_cmd[1],
-                               motor_cmd[2],
-                               motor_cmd[3]);
-                    lastPrint = now;
-                }
-#endif
-
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-
-            // stop motors
-            for (i = 0; i < 4; i++)
-                motor_cmd[i] = 1000;
-
-            Motor_Update(motor_cmd);
-
-#if DEBUG
-            UARTprintf("TEST COMPLETE \r\n");
-#endif
-
-            test_done = 1;
-        }
-
-
-        taskENTER_CRITICAL();
-        for (i = 0; i < 4; i++)
-            motor_cmd[i] = output_vec[i];
-        arm = switch_vec[0];
-        taskEXIT_CRITICAL();
-
-        if (!arm)
-        {
-            for (i = 0; i < 4; i++)
-                motor_cmd[i] = 1000;
-        }
-
-        for (i = 0; i < 4; i++)
-        {
-            if (motor_cmd[i] < 1000) motor_cmd[i] = 1000;
-            if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
-        }
 
         Motor_Update(motor_cmd);
 
 #if DEBUG
         uint32_t now = xTaskGetTickCount();
-        if ((now - lastPrint) > pdMS_TO_TICKS(100))
+
+        if ((now - lastPrint) > pdMS_TO_TICKS(200))
         {
-            UARTprintf("RUN PWM: %d %d %d %d\r\n",
+            UARTprintf("Motor PWM: %d %d %d %d\r\n",
                        motor_cmd[0],
                        motor_cmd[1],
                        motor_cmd[2],
                        motor_cmd[3]);
+
             lastPrint = now;
         }
-#endif
-
-        ulEnd = getTime_100ns();
-
-#if DEBUG
-        vLogTiming(ulThread_id, ulStart, ulEnd);
 #endif
     }
 }

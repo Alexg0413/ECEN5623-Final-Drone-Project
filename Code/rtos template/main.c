@@ -50,7 +50,7 @@ void Timer4BIntHandler(void);
 uint32_t pwmPeriod;
 uint32_t pwmClock;// will be set up later 
 
-#define PWM_FREQUENCY 150 //how often we update the motors
+#define PWM_FREQUENCY 50 //how often we update the motors
 
 uint32_t g_ui32SysClock;//stores cpu frequency 
 
@@ -98,7 +98,7 @@ int main(void)
     output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
     }
     //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
-    SysCtlDelay(g_ui32SysClock / 3 * 2); // 2 seconds from datasheet, this will cause 2 loud beeps then arm 
+    SysCtlDelay(g_ui32SysClock / 3 * 10); 
 
     //sets up gpio and timers put this after so we don't receive data just yet 
    // PWM_Input_Init(); // this is for radio 
