@@ -15,10 +15,12 @@
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
 #include <libraries/uart.h>
+#include <libraries/CAN.h>
 #include <stdint.h>
 #include <stdbool.h>
 
 // TivaWare includes
+#include "utils/uartstdio.h"
 #include "driverlib/debug.h"
 #include "driverlib/sysctl.h"
 
@@ -34,37 +36,36 @@
 
 uint32_t g_ui32SysClock;
 
-float state_vec[9] = {0};  //  [roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate, z_pos, z_velo, z_accel]
-float input_vec[4]  = {0};  // [thrust, roll_target, pitch_target, yaw_rate_target]
-int   output_vec[4] = {0};  // [motor0, motor1, motor2, motor3]
-int   switch_vec[3] = {0};  // [Arm, Aux1, Aux2]
+float state_vec[9];
+float input_vec[4];
+int   output_vec[4];
+int   switch_vec[3];
+
 
 // Main function
 int main(void)
 {
+    ///////////////////////////////////// system initialization
 
-    //////////////////////////////////////////////////////////// initializes the system (init)
+    g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+                                         SYSCTL_OSC_MAIN |
+                                         SYSCTL_USE_PLL |
+                                         SYSCTL_CFG_VCO_480), 120000000);
 
-    ////////////////////////////////////// Clock 
-    // Initialize system clock to 120 MHz
-	g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-	                                             SYSCTL_OSC_MAIN |
-	                                             SYSCTL_USE_PLL |
-	                                             SYSCTL_CFG_VCO_480), 120000000);
+    // debug logging over UART0                                     
+    UART0_init(g_ui32SysClock); 
 
+    // IMU communication over CAN1
+    CAN1_init(g_ui32SysClock); 
 
-    ////////////////////////////////////// UART printing
-    UART0_init(g_ui32SysClock);
-
-    ////////////////////////////////////// semaphores
     // create semaphores for synchronizing tasks
-    int i;
     SemaphoreHandle_t xSems[NUM_SERVICES];
+    int i;
     for (i = 0; i < NUM_SERVICES; i++)
         xSems[i] = xSemaphoreCreateBinary();
 
     // initialize timer interrupt 
-    Timer0A_init(xSems, NUM_SERVICES);
+    Timer0A_init(xSems, NUM_SERVICES); 
  
     // passes the UART semaphore to the tasks module so tasks can use it for synchronized printing
     SemaphoreHandle_t xPrintSem = xSemaphoreCreateBinary();
@@ -75,27 +76,23 @@ int main(void)
     DWT_init(); 
 
 
-	//////////////////////////////////////////////////////////// create tasks here
-    
-    // change vTaskX function to task functions once created 
-    xTaskCreate(IMU_input, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
-    xTaskCreate(Radio_Input, "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz - second
-    xTaskCreate(Motor_Output, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz - third
-    xTaskCreate(Controller, "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz - same as T2
+    ///////////////////////////////////// task initialization
+    xTaskCreate(State_input,  "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz
+    xTaskCreate(Radio_Input,  "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz
+    xTaskCreate(Motor_Output, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz
+    xTaskCreate(Controller,   "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz
 
     // logging task - min priority, 
-    xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
+    //xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
 
     // start by posting all semaphores 
     for (i = 0; i < NUM_SERVICES-1; i++)
         xSemaphoreGive(xSems[i]);
 
-
-    //////////////////////////////////////////////////////////// start scheduler (loop)
+    // start scheduler
     vTaskStartScheduler();
 
-	while(1) {} //you should never get here
-    return 0;
+    while(1) {}
 }
 
 /*  ASSERT() Error function
@@ -109,3 +106,5 @@ void __error__(char *pcFilename, uint32_t ui32Line)
     {
     }
 }
+
+

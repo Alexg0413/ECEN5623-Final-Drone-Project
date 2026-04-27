@@ -8,6 +8,8 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#include <stdint.h>
+#include <libraries/CAN.h>
 
 // System clock rate, 120 MHz
 #define SYSTEM_CLOCK    120000000U
@@ -16,10 +18,6 @@
 #define DEBUG 1
 
 // Shared state arrays (defined in main.c, accessible to all tasks)
-// state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration (floats)
-// input_vec[4]   — control inputs (floats)
-// output_vec[4]  — motor commands (ints)
-// switch_vec[3]  — aux switches (ints)
 extern float state_vec[9];
 extern float input_vec[4];
 extern int   output_vec[4];
