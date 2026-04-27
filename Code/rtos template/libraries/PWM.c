@@ -4,6 +4,12 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_ints.h"
+#include "FreeRTOS.h"
+#include "main.h"
+
 
 // ===== GLOBALS =====
 uint32_t pwmPeriod;

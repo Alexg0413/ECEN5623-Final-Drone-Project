@@ -112,7 +112,7 @@ int main(void)
     xTaskCreate(Controller, "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz - same as T2
 
     // logging task - min priority, 
-    xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
+    // xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
 
     // start by posting all semaphores 
     for (i = 0; i < NUM_SERVICES-1; i++)

@@ -7,6 +7,7 @@
 
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
+#include <libraries/PWM.h>
 #include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -39,6 +40,8 @@ static uint32_t ulLog_idx = 0;
 
 // printing semaphore, used to prevent intermingled print outputs
 static SemaphoreHandle_t xPrintSem = NULL;
+
+
 
 // helper function for logging
 static inline void vLogTiming(uint32_t thread_id, uint32_t start, uint32_t end)
@@ -246,8 +249,8 @@ void Motor_Output(void *pvParameters)
 
         if (!test_done)
         {
-        
-            for (int m = 0; m < 4; m++)
+            int m;
+            for (m = 0; m < 4; m++)
             {
 #if DEBUG
                 UARTprintf("Testing motor %d\r\n", m);
