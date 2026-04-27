@@ -119,9 +119,9 @@ void Radio_Input(void *pvParameters)
         taskEXIT_CRITICAL();
 
         float roll   = (pw[0] - 1500.0f) / 500.0f;
-        float pitch  = (pw[1] - 1500.0f) / 500.0f;
+        float pitch  = -1*(pw[1] - 1500.0f) / 500.0f;
         float yaw    = (pw[3] - 1500.0f) / 500.0f;
-        float thrust = (pw[2] - 1000.0f) / 1000.0f;
+        float thrust = (2000.0f-pw[2]) / 1000.0f;
 
         taskENTER_CRITICAL();
         input_vec[0] = thrust;
