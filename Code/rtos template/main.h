@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <libraries/CAN.h>
 
 // System clock rate, 120 MHz
 #define SYSTEM_CLOCK    120000000U
@@ -24,6 +25,7 @@ extern uint32_t g_ui32SysClock;
 // output_vec[4] — [motor0, motor1, motor2, motor3]
 // switch_vec[3] — [Arm, Aux1, Aux2]
 
+// Shared state arrays (defined in main.c, accessible to all tasks)
 extern float state_vec[9];
 extern float input_vec[4];
 extern int   output_vec[4];

@@ -26,8 +26,7 @@ typedef struct
 // configures TimerA0 for interrupts
 void Timer0A_init(SemaphoreHandle_t sems[], uint32_t num_sems);
 
-// ISR for timing 
-void Timer0A_Handler(void);
+void CAN1IntHandler(void);
 
 // initialize DWT cycle counter for accurate timing
 void DWT_init(void);  

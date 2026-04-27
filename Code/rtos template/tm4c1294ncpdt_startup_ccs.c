@@ -68,6 +68,7 @@ extern void Timer3AIntHandler(void);
 extern void Timer3BIntHandler(void);
 extern void Timer4AIntHandler(void);
 extern void Timer4BIntHandler(void);
+extern void CAN1IntHandler(void);
 
 //*****************************************************************************
 //
@@ -135,7 +136,7 @@ void (* const g_pfnVectors[])(void) =
     Timer3BIntHandler,                      // Timer 3 subtimer B
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
-    IntDefaultHandler,                      // CAN1
+    CAN1IntHandler,                         // CAN1
     IntDefaultHandler,                      // Ethernet
     IntDefaultHandler,                      // Hibernate
     IntDefaultHandler,                      // USB0

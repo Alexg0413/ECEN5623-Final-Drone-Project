@@ -15,12 +15,14 @@
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
 #include <libraries/uart.h>
+#include <libraries/CAN.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "driverlib/pwm.h"
 
 
 // TivaWare includes
+#include "utils/uartstdio.h"
 #include "driverlib/debug.h"
 #include "driverlib/sysctl.h"
 
@@ -55,24 +57,22 @@ uint32_t g_ui32SysClock;
 // Main function
 int main(void)
 {
+    ///////////////////////////////////// system initialization
 
-    //////////////////////////////////////////////////////////// initializes the system (init)
+    g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+                                         SYSCTL_OSC_MAIN |
+                                         SYSCTL_USE_PLL |
+                                         SYSCTL_CFG_VCO_480), 120000000);
 
-    ////////////////////////////////////// Clock 
-    // Initialize system clock to 120 MHz
-	g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
-	                                             SYSCTL_OSC_MAIN |
-	                                             SYSCTL_USE_PLL |
-	                                             SYSCTL_CFG_VCO_480), 120000000);
+    // debug logging over UART0                                     
+    UART0_init(g_ui32SysClock); 
 
+    // IMU communication over CAN1
+    CAN1_init(g_ui32SysClock); 
 
-    ////////////////////////////////////// UART printing
-    UART0_init(g_ui32SysClock);
-
-    ////////////////////////////////////// semaphores
     // create semaphores for synchronizing tasks
-    int i;
     SemaphoreHandle_t xSems[NUM_SERVICES];
+    int i;
     for (i = 0; i < NUM_SERVICES; i++)
         xSems[i] = xSemaphoreCreateBinary();
 
@@ -85,13 +85,13 @@ int main(void)
 
     for (i = 0; i < 4; i++)
     {
-    output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
+      output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
     }
     //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
     SysCtlDelay(g_ui32SysClock / 3 * 5);
 
     //sets up gpio and timers put this after so we don't receive data just yet 
-   PWM_Input_Init(); // this is for radio 
+    PWM_Input_Init(); // this is for radio 
 
     // passes the UART semaphore to the tasks module so tasks can use it for synchronized printing
     SemaphoreHandle_t xPrintSem = xSemaphoreCreateBinary();
@@ -102,28 +102,23 @@ int main(void)
     DWT_init(); 
 
 
-
-	//////////////////////////////////////////////////////////// create tasks here
-    
-    // change vTaskX function to task functions once created 
-    xTaskCreate(State_input, "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz - highest
-    xTaskCreate(Radio_Input, "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz - second
-    xTaskCreate(Motor_Output, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz - third
-    xTaskCreate(Controller, "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz - same as T2
+    ///////////////////////////////////// task initialization
+    xTaskCreate(State_input,  "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz
+    xTaskCreate(Radio_Input,  "S2", configMINIMAL_STACK_SIZE, (void*)xSems[1], configMAX_PRIORITIES-2, NULL); // S2: 50 Hz
+    xTaskCreate(Motor_Output, "S3", configMINIMAL_STACK_SIZE, (void*)xSems[2], configMAX_PRIORITIES-3, NULL); // S3: 150 Hz
+    xTaskCreate(Controller,   "S4", configMINIMAL_STACK_SIZE, (void*)xSems[3], configMAX_PRIORITIES-2, NULL); // S4: 100 Hz
 
     // logging task - min priority, 
-    // xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
+    //xTaskCreate(vWcetLoggingTask, "Log", configMINIMAL_STACK_SIZE, (void*)xSems[7], 1, NULL); // 5Hz
 
     // start by posting all semaphores 
     for (i = 0; i < NUM_SERVICES-1; i++)
         xSemaphoreGive(xSems[i]);
 
-
-    //////////////////////////////////////////////////////////// start scheduler (loop)
+    // start scheduler
     vTaskStartScheduler();
 
-	while(1) {} //you should never get here
-    return 0;
+    while(1) {}
 }
 
 /*  ASSERT() Error function
