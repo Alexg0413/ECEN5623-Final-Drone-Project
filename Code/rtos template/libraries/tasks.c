@@ -62,25 +62,58 @@ void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore)
     xPrintSem = xSemaphore;
 }
 
-// handle CAN bus input (interrupt)
-// converts data from int to float 
-// integrate acceleration to get velocity / position
-// do transform to convert from body frame to world frame (position) 
-// stores in shared state array
 void State_input(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    uint32_t ulStart = 0;
-    uint32_t ulEnd = 0;
+    uint32_t ulStart;
+    uint32_t ulEnd;
     uint32_t ulThread_id = 1;
+
+    static uint32_t ulCallCount = 0;
 
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
         ulStart = getTime_100ns();
+        ulCallCount++;
 
         // ---------- task work here ----------
-        
+        float euler1 = bytes_to_float(&can1.data[0], 2, 10000.0f);
+        float euler2 = bytes_to_float(&can1.data[2], 2, 10000.0f);
+        float euler3 = bytes_to_float(&can1.data[4], 2, 10000.0f);
+        float p      = bytes_to_float(&can2.data[0], 2, 1000.0f);
+        float q      = bytes_to_float(&can3.data[0], 2, 1000.0f);
+        float r      = bytes_to_float(&can4.data[0], 2, 1000.0f);
+        float u_dot  = bytes_to_float(&can2.data[2], 2, 100.0f);
+        float v_dot  = bytes_to_float(&can3.data[2], 2, 100.0f);
+        float w_dot  = bytes_to_float(&can4.data[2], 2, 100.0f);
+
+        state_vec[0] = euler1;
+        state_vec[1] = euler2;
+        state_vec[2] = euler3;
+        state_vec[3] = p;
+        state_vec[4] = q;
+        state_vec[5] = r;
+        state_vec[6] = u_dot;
+        state_vec[7] = v_dot;
+        state_vec[8] = w_dot;
+
+#if DEBUG
+        if (ulCallCount % 20 == 0)
+        {
+            xSemaphoreTake(xPrintSem, portMAX_DELAY);
+            #define RAD_TO_DEG 57.2957795f
+            UARTprintf("Euler (deg):   %d %d %d\r\n",
+                (int32_t)(euler1 * RAD_TO_DEG), (int32_t)(euler2 * RAD_TO_DEG), (int32_t)(euler3 * RAD_TO_DEG));
+            UARTprintf("Rates (deg/s): %d %d %d\r\n",
+                (int32_t)(p * RAD_TO_DEG), (int32_t)(q * RAD_TO_DEG), (int32_t)(r * RAD_TO_DEG));
+            UARTprintf("Accel(x100):   %d %d %d\r\n",
+                (int32_t)(u_dot * 100), (int32_t)(v_dot * 100), (int32_t)(w_dot * 100));
+            UARTprintf("CAN freq:      %d Hz  (period %d us)\r\n",
+                (int)g_ulCan1FreqHz, (int)g_ulCan1LastDelta_us);
+            xSemaphoreGive(xPrintSem);
+        }
+#endif
 
         ulEnd = getTime_100ns();
 #if DEBUG

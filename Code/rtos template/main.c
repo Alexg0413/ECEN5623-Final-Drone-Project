@@ -40,8 +40,16 @@
 
 // project includes
 #include "main.h"
+#include <string.h>
+
+float bytes_to_float(volatile uint8_t *bytes, uint8_t size, float scale_factor);
 
 uint32_t g_ui32SysClock;
+
+float state_vec[9];
+float input_vec[4];
+int   output_vec[4];
+int   switch_vec[3];
 
 #define DID_SET_DATA  3
 #define DID_INS_1     4   // verify in your firmware
@@ -51,6 +59,11 @@ volatile CAN_Frame_t can1;
 volatile CAN_Frame_t can2;
 volatile CAN_Frame_t can3;
 volatile CAN_Frame_t can4;
+
+volatile uint32_t g_ulCan1MsgCount    = 0;
+volatile uint32_t g_ulCan1FreqHz      = 0;
+volatile uint32_t g_ulCan1LastDelta_us = 0;
+static   uint32_t s_ulCan1LastTime    = 0;
 
 void CAN1IntHandler(void);
 
@@ -185,8 +198,7 @@ int main(void)
     // start scheduler
     vTaskStartScheduler();
 
-	while(1) {} //you should never get here
-    return 0;
+    while(1) {}
 }
 
 /*  ASSERT() Error function
@@ -211,11 +223,15 @@ void CAN1IntHandler(void)
 
     status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
 
-    if(status == 0)
+    // status interrupt (CAN error, bus-off, etc.) — clear and return
+    if(status == 0x8000U)
     {
         CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
         return;
     }
+
+    if(status == 0)
+        return;
 
     tCANMsgObject msg;
     uint8_t data[8];
@@ -227,25 +243,39 @@ void CAN1IntHandler(void)
     switch(msg.ui32MsgID)
     {
         case 0x01:
-            memcpy((void*)can1.data, data, 8);
+            memcpy((void*)(uint8_t*)can1.data, data, 8);
             can1.id = 0x01;
             can1.valid = 1;
+            g_ulCan1MsgCount++;
+            {
+                uint32_t now = getTime_100ns();
+                if (s_ulCan1LastTime != 0)
+                {
+                    uint32_t delta = now - s_ulCan1LastTime;
+                    if (delta > 0)
+                    {
+                        g_ulCan1FreqHz       = 10000000UL / delta;
+                        g_ulCan1LastDelta_us = delta / 10;
+                    }
+                }
+                s_ulCan1LastTime = now;
+            }
             break;
 
         case 0x02:
-            memcpy((void*)can2.data, data, 8);
+            memcpy((void*)(uint8_t*)can2.data, data, 8);
             can2.id = 0x02;
             can2.valid = 1;
             break;
 
         case 0x03:
-            memcpy((void*)can3.data, data, 8);
+            memcpy((void*)(uint8_t*)can3.data, data, 8);
             can3.id = 0x03;
             can3.valid = 1;
             break;
 
         case 0x04:
-            memcpy((void*)can4.data, data, 8);
+            memcpy((void*)(uint8_t*)can4.data, data, 8);
             can4.id = 0x04;
             can4.valid = 1;
             break;
@@ -255,39 +285,9 @@ void CAN1IntHandler(void)
 }
 
 
-void State_input(void)
-{
-    // state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration (floats)
-    float euler1 = bytes_to_float(can1.data[0], 2, 10000)
-    float euler2 = bytes_to_float(can1.data[2], 2, 10000)
-    float euler3 = bytes_to_float(can1.data[4], 2, 10000)
-    float p = bytes_to_float(can2.data[0], 2, 1000);
-    float q = bytes_to_float(can3.data[0], 2, 1000);
-    float r = bytes_to_float(can4.data[0], 2, 1000);
-    float u_dot = bytes_to_float(can2.data[2], 2, 100);
-    float v_dot = bytes_to_float(can3.data[2], 2, 100);
-    float w_dot = bytes_to_float(can4.data[2], 2, 100);
-
-    UARTprintf("Euler Angles: %f,%f,%f\r\n", euler1, euler2, euler3);
-    UARTprintf("Angular Rates: %f,%f,%f\r\n", p, q, r);
-    UARTprintf("Velocities: %f,%f,%f\r\n", u_dot, v_dot, w_dot);
-
-    state[0] = euler1;
-    state[1] = euler2;
-    state[2] = euler3;
-    state[3] = p;
-    state[4] = q;
-    state[5] = r;
-    state[6] = u_dot;
-    state[7] = v_dot;
-    state[8] = w_dot;
-}
-
-
-// Help function
-float bytes_to_float(uint8_t *bytes, uint8_t size, float scale_factor) {
+float bytes_to_float(volatile uint8_t *bytes, uint8_t size, float scale_factor) {
     int16_t raw_val = 0;
-    memcpy(bytes, raw_val, size);
+    memcpy(&raw_val, bytes, size);
     float f = raw_val / scale_factor;
     return f;
 }
