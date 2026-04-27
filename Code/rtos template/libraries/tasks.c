@@ -123,13 +123,33 @@ void Radio_Input(void *pvParameters)
         float yaw    = (pw[3] - 1500.0f) / 500.0f;
         float thrust = (2000.0f-pw[2]) / 1000.0f;
 
+        float roll   = (pw[0] - 1500.0f) / 500.0f;
+float pitch  = (1500.0f - pw[1]) / 500.0f;   // cleaner than -1*(...)
+float yaw    = (pw[3] - 1500.0f) / 500.0f;
+float thrust = (2000.0f - pw[2]) / 1000.0f;
+
+
+
+
+if (roll > 1.0f) roll = 1.0f;
+if (roll < -1.0f) roll = -1.0f;
+
+if (pitch > 1.0f) pitch = 1.0f;
+if (pitch < -1.0f) pitch = -1.0f;
+
+if (yaw > 1.0f) yaw = 1.0f;
+if (yaw < -1.0f) yaw = -1.0f;
+
+if (thrust > 1.0f) thrust = 1.0f;
+if (thrust < 0.0f) thrust = 0.0f;
+
         taskENTER_CRITICAL();
         input_vec[0] = thrust;
         input_vec[1] = roll;
         input_vec[2] = pitch;
         input_vec[3] = yaw;
-        switch_vec[1] = (pw[4] > 1500);
-        switch_vec[0] = (pw[5] > 1500);
+        switch_vec[1] = (pw[5] > 1500);
+        switch_vec[0] = (pw[4] > 1500);
         taskEXIT_CRITICAL();
 
 #if DEBUG
