@@ -100,7 +100,7 @@ void motor_mixing_update(int armed, float state_vec[])
     *    RL [1]        RR [4]
     */
 
-    if (armed==0 || state_vec[0] > 1.3 || state_vec[1] > 1.3) 
+    if (armed==0 || fabsf(state_vec[0]) > 1.3f || fabsf(state_vec[1]) > 1.3f) 
     {
         output_vec[0] = PWM_MIN_US;
         output_vec[1] = PWM_MIN_US;
