@@ -81,7 +81,7 @@ void z_stabilize_controller_update(float state_vec[], float input_vec[]);
 // Mix thrust + attitude commands into per-motor PWM values.
 // Reads thrust_command, attitude_commands[], output_vec[], and switch_vec[] globals.
 // Motors are forced to PWM_MIN_US when switch_vec[0] (arm channel) == 0.
-void motor_mixing_update(void);
+void motor_mixing_update(int armed, float state_vec[]);
 
 extern float attitude_commands[3]; // [roll_torque, pitch_torque, yaw_torque] in range (-1,1)
 extern float thrust_command;       // normalized throttle output [0, 1]

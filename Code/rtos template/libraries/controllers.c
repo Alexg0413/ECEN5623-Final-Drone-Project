@@ -87,7 +87,7 @@ void z_stabilize_controller_update(float state_vec[], float input_vec[])
 
 // TODO: add altitude hold controller (PID)
 
-void motor_mixing_update(int armed)
+void motor_mixing_update(int armed, float state_vec[])
 {
     /*   Roll  right   (+): left motors (FL, RL) up, right motors (FR, RR) down
     *    Pitch up      (+): rear motors (FL, FR) up, front motors (RL, RR) down
@@ -100,7 +100,7 @@ void motor_mixing_update(int armed)
     *    RL [1]        RR [4]
     */
 
-    if (armed==0) 
+    if (armed==0 || state_vec[0] > 1.3 || state_vec[1] > 1.3) 
     {
         output_vec[0] = PWM_MIN_US;
         output_vec[1] = PWM_MIN_US;
