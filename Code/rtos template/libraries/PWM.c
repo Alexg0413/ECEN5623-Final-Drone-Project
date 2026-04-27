@@ -36,8 +36,10 @@ void Timer5AIntHandler(void)
     }
     else
     {
-        pulse_width[0] = (rise_time[0] - time)/120;  //once you go low it is over so you can calculate pulse width
-        TimerControlEvent(TIMER5_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);// switch back to low to high edge detection
+        uint32_t pw = (rise_time[0] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[0] = pw;
+        TimerControlEvent(TIMER5_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
         rising_edge[0] = true;
     }
 }
@@ -57,7 +59,9 @@ void Timer5BIntHandler(void)
     }
     else
     {
-        pulse_width[1] = (rise_time[1] - time)/120;
+        uint32_t pw = (rise_time[1] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[1] = pw;
         TimerControlEvent(TIMER5_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
         rising_edge[1] = true;
     }
@@ -78,7 +82,9 @@ void Timer3AIntHandler(void)
     }
     else
     {
-        pulse_width[2] = (rise_time[2] - time)/120;
+        uint32_t pw = (rise_time[2] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[2] = pw;
         TimerControlEvent(TIMER3_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
         rising_edge[2] = true;
     }
@@ -99,7 +105,9 @@ void Timer3BIntHandler(void)
     }
     else
     {
-        pulse_width[3] = (rise_time[3] - time)/120;
+        uint32_t pw = (rise_time[3] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[3] = pw;
         TimerControlEvent(TIMER3_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
         rising_edge[3] = true;
     }
@@ -118,7 +126,9 @@ void Timer4AIntHandler(void)
     }
     else
     {
-        pulse_width[4] = (rise_time[4] - time)/120;
+        uint32_t pw = (rise_time[4] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[4] = pw;
         TimerControlEvent(TIMER4_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
         rising_edge[4] = true;
     }
@@ -138,7 +148,9 @@ void Timer4BIntHandler(void)
     }
     else
     {
-        pulse_width[5] = (rise_time[5] - time)/120;
+        uint32_t pw = (rise_time[5] - time) / 120;
+        if (pw >= 800 && pw <= 2200)
+            pulse_width[5] = pw;
         TimerControlEvent(TIMER4_BASE, TIMER_B, TIMER_EVENT_POS_EDGE);
         rising_edge[5] = true;
     }
@@ -319,16 +331,16 @@ void Motor_Update(int *cmd)
    
     uint32_t pulse;
     //cmd is in microseconds, need to convert to HZ, 
-   pulse = (pwmClock * (uint32_t)cmd[1]) / 1000000;
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse);
-
-   pulse = (pwmClock * (uint32_t)cmd[2]) / 1000000;
+    pulse = (pwmClock * (uint32_t)cmd[0]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_5, pulse);
 
-    pulse = (pwmClock * (uint32_t)cmd[3]) / 1000000;
+    pulse = (pwmClock * (uint32_t)cmd[1]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_6, pulse);
 
-    pulse = (pwmClock * (uint32_t)cmd[0]) / 1000000;
+    pulse = (pwmClock * (uint32_t)cmd[2]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_7, pulse);
+
+    pulse = (pwmClock * (uint32_t)cmd[3]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse);
 }
 
