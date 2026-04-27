@@ -125,8 +125,8 @@ void Radio_Input(void *pvParameters)
         input_vec[1] = roll;
         input_vec[2] = pitch;
         input_vec[3] = yaw;
-        switch_vec[0] = (pw[4] > 1500);
-        switch_vec[1] = (pw[5] > 1500);
+        switch_vec[1] = (pw[4] > 1500);
+        switch_vec[0] = (pw[5] > 1500);
         taskEXIT_CRITICAL();
 
 #if DEBUG
