@@ -319,16 +319,16 @@ void Motor_Update(int *cmd)
    
     uint32_t pulse;
     //cmd is in microseconds, need to convert to HZ, 
-   pulse = (pwmClock * (uint32_t)cmd[0]) / 1000000;
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse);// set the output 
-
    pulse = (pwmClock * (uint32_t)cmd[1]) / 1000000;
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, pulse);
+
+   pulse = (pwmClock * (uint32_t)cmd[2]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_5, pulse);
 
-    pulse = (pwmClock * (uint32_t)cmd[2]) / 1000000;
+    pulse = (pwmClock * (uint32_t)cmd[3]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_6, pulse);
 
-    pulse = (pwmClock * (uint32_t)cmd[3]) / 1000000;
+    pulse = (pwmClock * (uint32_t)cmd[0]) / 1000000;
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_7, pulse);
 }
 

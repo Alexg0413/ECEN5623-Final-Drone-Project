@@ -237,9 +237,7 @@ void Motor_Output(void *pvParameters)
     int motor_cmd[4];
     int i;
 
-#if DEBUG
-    UARTprintf("Motor test sequence started\r\n");
-#endif
+
 
     static int test_done = 0;
 
@@ -252,9 +250,7 @@ void Motor_Output(void *pvParameters)
             int m;
             for (m = 0; m < 4; m++)
             {
-#if DEBUG
-                UARTprintf("Testing motor %d\r\n", m);
-#endif
+
 
                 uint32_t start = xTaskGetTickCount();
 
@@ -279,9 +275,6 @@ void Motor_Output(void *pvParameters)
                 vTaskDelay(pdMS_TO_TICKS(1000));
             }
 
-#if DEBUG
-            UARTprintf("Motor test complete\r\n");
-#endif
 
             test_done = 1;
         }
