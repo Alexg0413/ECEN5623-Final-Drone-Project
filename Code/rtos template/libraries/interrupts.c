@@ -6,14 +6,17 @@
  */
 
 #include <libraries/interrupts.h>
+#include <libraries/CAN.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_types.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/can.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
@@ -30,6 +33,10 @@
 // 600Hz = 1.6667 ms
 // 120 MHz clock: 120,000,000 / 600 = 200,000 ticks per period
 #define SEQUENCER_PERIOD_TICKS 200000 // 1.6667 ms period at 120 MHz
+
+#define RX_BUFFER_SIZE 256
+
+volatile uint8_t canBuffer[RX_BUFFER_SIZE];
 
 // semaphore table (seqgen.c)
 static SeqEntry_t xSeqTable[NUM_SERVICES] =
@@ -103,6 +110,62 @@ void Timer0AIntHandler(void)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+void CAN1IntHandler(void)
+{
+    uint32_t status;
+
+    status = CANIntStatus(CAN1_BASE, CAN_INT_STS_CAUSE);
+
+    // status interrupt (CAN error, bus-off, etc.) — clear and return
+    if(status == 0x8000U)
+    {
+        CANStatusGet(CAN1_BASE, CAN_STS_CONTROL);
+        return;
+    }
+
+    if(status == 0)
+        return;
+
+    tCANMsgObject msg;
+    uint8_t data[8];
+    uint8_t i;
+
+    msg.pui8MsgData = data;
+
+    CANMessageGet(CAN1_BASE, status, &msg, true);
+
+    switch(msg.ui32MsgID)
+    {
+        case 0x01:
+            for (i = 0; i < 8; i++) can1.data[i] = data[i];
+            can1.id = 0x01;
+            can1.valid = 1;
+            break;
+            
+            case 0x02:
+            for (i = 0; i < 8; i++) can2.data[i] = data[i];
+            can2.id = 0x02;
+            can2.valid = 1;
+            CAN_update_freq(); // used to measure CAN receive frequency
+            break;
+
+        case 0x03:
+            for (i = 0; i < 8; i++) can3.data[i] = data[i];
+            can3.id = 0x03;
+            can3.valid = 1;
+            break;
+
+        case 0x04:
+            for (i = 0; i < 8; i++) can4.data[i] = data[i];
+            can4.id = 0x04;
+            can4.valid = 1;
+            break;
+    }
+
+    CANIntClear(CAN1_BASE, status);
+}
+
+
 void DWT_init(void)
 {
     
@@ -122,3 +185,4 @@ uint32_t getTime_us(void)
 {
     return DWT_CYCCNT / 120U; 
 }
+

@@ -7,6 +7,7 @@
 
 #include <libraries/interrupts.h>
 #include <libraries/tasks.h>
+#include <libraries/CAN.h>
 #include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -62,6 +63,10 @@ void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore)
     xPrintSem = xSemaphore;
 }
 
+
+// handle CAN bus input (interrupt)
+// converts data from int to float 
+// stores in shared state array
 void State_input(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
@@ -77,7 +82,6 @@ void State_input(void *pvParameters)
         ulStart = getTime_100ns();
         ulCallCount++;
 
-        // ---------- task work here ----------
         float euler1 = bytes_to_float(&can1.data[0], 2, 10000.0f);
         float euler2 = bytes_to_float(&can1.data[2], 2, 10000.0f);
         float euler3 = bytes_to_float(&can1.data[4], 2, 10000.0f);
@@ -98,7 +102,10 @@ void State_input(void *pvParameters)
         state_vec[7] = v_dot;
         state_vec[8] = w_dot;
 
+        ulEnd = getTime_100ns();    
+
 #if DEBUG
+// prints the state and CAN frequency at 10 Hz
         if (ulCallCount % 20 == 0)
         {
             xSemaphoreTake(xPrintSem, portMAX_DELAY);
@@ -113,11 +120,9 @@ void State_input(void *pvParameters)
                 (int)g_ulCan1FreqHz, (int)g_ulCan1LastDelta_us);
             xSemaphoreGive(xPrintSem);
         }
-#endif
 
-        ulEnd = getTime_100ns();
-#if DEBUG
         vLogTiming(ulThread_id, ulStart, ulEnd);
+        
 #endif
     }
 }
@@ -259,6 +264,7 @@ void vWcetLoggingTask(void *pvParameters)
 #endif
     }
 }
+
 
 
 

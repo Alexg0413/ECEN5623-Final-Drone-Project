@@ -38,5 +38,4 @@ void vWcetLoggingTask(void *pvParameters);
 // setup the shared UART semaphore 
 void vSetUARTSemaphore(SemaphoreHandle_t xSemaphore);
 
-
 #endif /* TASKS_H_ */

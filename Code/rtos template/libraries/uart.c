@@ -29,8 +29,5 @@ void UART0_init(uint32_t ui32SysClock)
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
     // Initialize UART0 for console I/O at 115200 baud
-    UARTConfigSetExpClk(UART0_BASE, ui32SysClock, 115200,
-                        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
     UARTStdioConfig(0, 115200, ui32SysClock);
-    UARTEnable(UART0_BASE);
 }
