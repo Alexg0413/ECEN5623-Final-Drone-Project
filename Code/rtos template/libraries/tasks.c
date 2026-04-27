@@ -187,12 +187,28 @@ void Controller(void *pvParameters)
     uint32_t ulEnd;
     uint32_t ulThread_id = 4;
 
+    float state[9];
+    float input[4];
+    int armed;
+
+
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
         ulStart = getTime_100ns();
 
         // ---------- task work here ----------
+         // Copy shared data safely
+        taskENTER_CRITICAL();
+        for (int i = 0; i < 9; i++) state[i] = state_vec[i];
+        for (int i = 0; i < 4; i++) input[i] = input_vec[i];
+        armed = switch_vec[0];
+        taskEXIT_CRITICAL();
+
+        // Run controllers
+        attitude_controllers_update(state, input);
+        z_stabilize_controller_update(state, input);
+        motor_mixing_update(armed);
 
         ulEnd = getTime_100ns();
 #if DEBUG
