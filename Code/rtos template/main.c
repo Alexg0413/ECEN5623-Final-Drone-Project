@@ -91,7 +91,7 @@ int main(void)
     SysCtlDelay(g_ui32SysClock / 3 * 5);
 
     //sets up gpio and timers put this after so we don't receive data just yet 
-   // PWM_Input_Init(); // this is for radio 
+   PWM_Input_Init(); // this is for radio 
 
     // passes the UART semaphore to the tasks module so tasks can use it for synchronized printing
     SemaphoreHandle_t xPrintSem = xSemaphoreCreateBinary();

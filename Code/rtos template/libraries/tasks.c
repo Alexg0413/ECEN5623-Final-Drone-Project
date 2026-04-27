@@ -101,6 +101,10 @@ void Radio_Input(void *pvParameters)
     uint32_t pw[6];
     int i;
 
+#if DEBUG
+    static uint32_t lastPrint = 0;  // add this
+#endif
+
     while(1)
     {
         xSemaphoreTake(semaphore, portMAX_DELAY);
@@ -124,6 +128,18 @@ void Radio_Input(void *pvParameters)
         switch_vec[0] = (pw[4] > 1500);
         switch_vec[1] = (pw[5] > 1500);
         taskEXIT_CRITICAL();
+
+#if DEBUG
+        uint32_t now = xTaskGetTickCount();
+        if ((now - lastPrint) > pdMS_TO_TICKS(200))
+        {
+            xSemaphoreTake(xPrintSem, portMAX_DELAY);
+            UARTprintf("PW raw: %u %u %u %u %u %u\r\n",
+                       pw[0], pw[1], pw[2], pw[3], pw[4], pw[5]);
+            xSemaphoreGive(xPrintSem);
+            lastPrint = now;
+        }
+#endif
 
         ulEnd = getTime_100ns();
 #if DEBUG
