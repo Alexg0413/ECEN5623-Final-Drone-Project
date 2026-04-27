@@ -18,6 +18,8 @@
 #include <libraries/CAN.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "driverlib/pwm.h"
+
 
 // TivaWare includes
 #include "utils/uartstdio.h"
@@ -34,13 +36,23 @@
 // project includes
 #include "main.h"
 
+#include "driverlib/timer.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_ints.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/interrupt.h"
+
+#include <libraries/PWM.h>
+
+
+
+
+float state_vec[9] = {0};  //  [roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate, z_pos, z_velo, z_accel]
+float input_vec[4]  = {0};  // [thrust, roll_target, pitch_target, yaw_rate_target]
+int   output_vec[4] = {0};  // [motor0, motor1, motor2, motor3]
+int   switch_vec[2] = {0};  // [Arm, Aux1, Aux2]
 uint32_t g_ui32SysClock;
-
-float state_vec[9];
-float input_vec[4];
-int   output_vec[4];
-int   switch_vec[3];
-
 
 // Main function
 int main(void)
@@ -64,9 +76,23 @@ int main(void)
     for (i = 0; i < NUM_SERVICES; i++)
         xSems[i] = xSemaphoreCreateBinary();
 
-    // initialize timer interrupt 
-    Timer0A_init(xSems, NUM_SERVICES); 
- 
+    // initialize timer interrupt for sequencer
+    Timer0A_init(xSems, NUM_SERVICES);
+
+
+
+    PWM_Output_Init();//motor outouts will initialize motors to pwm 1000 microS which is minimum throttle
+
+    for (i = 0; i < 4; i++)
+    {
+      output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
+    }
+    //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
+    SysCtlDelay(g_ui32SysClock / 3 * 5);
+
+    //sets up gpio and timers put this after so we don't receive data just yet 
+    PWM_Input_Init(); // this is for radio 
+
     // passes the UART semaphore to the tasks module so tasks can use it for synchronized printing
     SemaphoreHandle_t xPrintSem = xSemaphoreCreateBinary();
     vSetUARTSemaphore(xPrintSem); 
