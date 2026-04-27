@@ -17,6 +17,7 @@
 // Set to 1 to enable all logging and UART print output, 0 to disable
 #define DEBUG 1
 
+extern uint32_t g_ui32SysClock;
 
 // state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration
 // input_vec[4]  — [thrust, roll_target, pitch_target, yaw_rate_target]
@@ -30,24 +31,6 @@ extern int   switch_vec[2];
 
 
 
-// Raw pulse widths from receiver (microseconds)
-extern volatile uint32_t pulse_width[6];
 
-// Internal capture timing (used in ISR)
-extern volatile uint32_t rise_time[6];
-extern volatile bool rising_edge[6];
-
-// PWM initialization
-void PWM_Input_Init(void);
-void PWM_Output_Init(void);
-void Motor_Update(int *cmd);
-
-// Timer ISR handlers (must match vector table)
-void Timer5AIntHandler(void);
-void Timer5BIntHandler(void);
-void Timer4AIntHandler(void);
-void Timer4BIntHandler(void);
-void Timer3AIntHandler(void);
-void Timer3BIntHandler(void);
 
 #endif /* MAIN_H_ */
