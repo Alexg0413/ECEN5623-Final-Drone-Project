@@ -180,7 +180,7 @@ void Motor_Output(void *pvParameters)
 void Motor_Output(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
-    int motor_cmd[4] = {1600, 1600, 1600, 1600};
+    int motor_cmd[4] = {1300, 1300, 1300, 1300};
 
 #if DEBUG
     UARTprintf("Motor_Output task started\r\n");

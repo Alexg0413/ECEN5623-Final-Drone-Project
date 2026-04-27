@@ -50,7 +50,7 @@ void Timer4BIntHandler(void);
 uint32_t pwmPeriod;
 uint32_t pwmClock;// will be set up later 
 
-#define PWM_FREQUENCY 50 //how often we update the motors
+#define PWM_FREQUENCY 150 //how often we update the motors
 
 uint32_t g_ui32SysClock;//stores cpu frequency 
 
@@ -98,7 +98,7 @@ int main(void)
     output_vec[i] = 1000;// we initialize motors to a safe value, ESC expects a
     }
     //ESC uses PWM protocol and it must detect safe low throttle signal so it can arm which it requires for 2 seconds 
-    SysCtlDelay(g_ui32SysClock / 3 * 10); 
+    SysCtlDelay(g_ui32SysClock / 3 * 5);
 
     //sets up gpio and timers put this after so we don't receive data just yet 
    // PWM_Input_Init(); // this is for radio 
@@ -188,9 +188,6 @@ void Timer5BIntHandler(void)
         rising_edge[1] = true;
     }
 }
-
-
-
 
 // CH5 to Timer3A
 void Timer3AIntHandler(void)
@@ -397,13 +394,13 @@ void PWM_Output_Init(void)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOG));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOK));
 
-    // Set PWM clock = system clock / 64
-    SysCtlPWMClockSet(SYSCTL_PWMDIV_64);
+    // Set PWM clock = system clock / 64 (TM4C1294 requires PWMClockSet, not SysCtlPWMClockSet)
+    PWMClockSet(PWM0_BASE, PWM_SYSCLK_DIV_64);
 
     pwmClock = SYSTEM_CLOCK / 64; //use a slower clock cause the you need amounts of counts and you would need 
     //300000 to get what we need only have 65535
 
-    // Compute period for 50 Hz
+    // Compute period for 150 Hz
     pwmPeriod = pwmClock / PWM_FREQUENCY;
 
     //GPIO Congfiguration
