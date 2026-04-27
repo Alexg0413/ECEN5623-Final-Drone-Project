@@ -133,15 +133,22 @@ void Radio_Input(void *pvParameters)
         taskEXIT_CRITICAL();
 
 #if DEBUG
-        uint32_t now = xTaskGetTickCount();
-        if ((now - lastPrint) > pdMS_TO_TICKS(200))
-        {
-            xSemaphoreTake(xPrintSem, portMAX_DELAY);
-            UARTprintf("PW raw: %u %u %u %u %u %u\r\n",
-                       pw[0], pw[1], pw[2], pw[3], pw[4], pw[5]);
-            xSemaphoreGive(xPrintSem);
-            lastPrint = now;
-        }
+uint32_t now = xTaskGetTickCount();
+if ((now - lastPrint) > pdMS_TO_TICKS(200))
+{
+    int roll_i   = (int)(roll * 1000.0f);
+    int pitch_i  = (int)(pitch * 1000.0f);
+    int yaw_i    = (int)(yaw * 1000.0f);
+    int thrust_i = (int)(thrust * 1000.0f);
+
+    xSemaphoreTake(xPrintSem, portMAX_DELAY);
+    UARTprintf("Norm: R:%d P:%d Y:%d T:%d | SW:%d %d\r\n",
+               roll_i, pitch_i, yaw_i, thrust_i,
+               switch_vec[0], switch_vec[1]);
+    xSemaphoreGive(xPrintSem);
+
+    lastPrint = now;
+}
 #endif
 
         ulEnd = getTime_100ns();
