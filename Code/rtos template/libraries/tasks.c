@@ -192,7 +192,7 @@ void Motor_Output(void *pvParameters)
     }
 }
 */
-
+/*
 void Motor_Output(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
@@ -223,6 +223,71 @@ void Motor_Output(void *pvParameters)
             lastPrint = now;
         }
 #endif
+    }
+}
+*/
+
+
+void Motor_Output(void *pvParameters)
+{
+    SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
+    int motor_cmd[4];
+    int i;
+
+#if DEBUG
+    UARTprintf("Motor test sequence started\r\n");
+#endif
+
+    static int test_done = 0;
+
+    while(1)
+    {
+        xSemaphoreTake(semaphore, portMAX_DELAY);
+
+        if (!test_done)
+        {
+        
+            for (int m = 0; m < 4; m++)
+            {
+#if DEBUG
+                UARTprintf("Testing motor %d\r\n", m);
+#endif
+
+                uint32_t start = xTaskGetTickCount();
+
+                while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(3000))
+                {
+                    // all motors off
+                    for (i = 0; i < 4; i++)
+                        motor_cmd[i] = 1000;
+
+                    // one motor on
+                    motor_cmd[m] = 1300;
+
+                    Motor_Update(motor_cmd);
+                    vTaskDelay(pdMS_TO_TICKS(10));
+                }
+
+                // pause between motors
+                for (i = 0; i < 4; i++)
+                    motor_cmd[i] = 1000;
+
+                Motor_Update(motor_cmd);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+
+#if DEBUG
+            UARTprintf("Motor test complete\r\n");
+#endif
+
+            test_done = 1;
+        }
+
+
+        for (i = 0; i < 4; i++)
+            motor_cmd[i] = 1000;
+
+        Motor_Update(motor_cmd);
     }
 }
 // reads shared state and control input arrays
