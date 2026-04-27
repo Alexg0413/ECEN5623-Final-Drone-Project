@@ -123,25 +123,25 @@ void Radio_Input(void *pvParameters)
         float yaw    = (pw[3] - 1500.0f) / 500.0f;
         float thrust = (2000.0f-pw[2]) / 1000.0f;
 
-        float roll   = (pw[0] - 1500.0f) / 500.0f;
-float pitch  = (1500.0f - pw[1]) / 500.0f;   // cleaner than -1*(...)
-float yaw    = (pw[3] - 1500.0f) / 500.0f;
-float thrust = (2000.0f - pw[2]) / 1000.0f;
+        // float fcut = 10.0f
+        // delta_time = 1.0f/150.0f; // assuming 150Hz update rate 
+
+        // float RC = 1.0f / (2.0f * 3.14159265f * fcut);
+        // roll += (delta_time / (RC + delta_time)) * (roll - last_roll);
 
 
 
+        if (roll > 1.0f) roll = 1.0f;
+        if (roll < -1.0f) roll = -1.0f;
 
-if (roll > 1.0f) roll = 1.0f;
-if (roll < -1.0f) roll = -1.0f;
+        if (pitch > 1.0f) pitch = 1.0f;
+        if (pitch < -1.0f) pitch = -1.0f;
 
-if (pitch > 1.0f) pitch = 1.0f;
-if (pitch < -1.0f) pitch = -1.0f;
+        if (yaw > 1.0f) yaw = 1.0f;
+        if (yaw < -1.0f) yaw = -1.0f;
 
-if (yaw > 1.0f) yaw = 1.0f;
-if (yaw < -1.0f) yaw = -1.0f;
-
-if (thrust > 1.0f) thrust = 1.0f;
-if (thrust < 0.0f) thrust = 0.0f;
+        if (thrust > 1.0f) thrust = 1.0f;
+        if (thrust < 0.0f) thrust = 0.0f;
 
         taskENTER_CRITICAL();
         input_vec[0] = thrust;
@@ -153,26 +153,28 @@ if (thrust < 0.0f) thrust = 0.0f;
         taskEXIT_CRITICAL();
 
 #if DEBUG
-uint32_t now = xTaskGetTickCount();
-if ((now - lastPrint) > pdMS_TO_TICKS(200))
-{
-    int roll_i   = (int)(roll * 1000.0f);
-    int pitch_i  = (int)(pitch * 1000.0f);
-    int yaw_i    = (int)(yaw * 1000.0f);
-    int thrust_i = (int)(thrust * 1000.0f);
+        uint32_t now = xTaskGetTickCount();
+        if ((now - lastPrint) > pdMS_TO_TICKS(200))
+        {
+            int roll_i   = (int)(roll * 1000.0f);
+            int pitch_i  = (int)(pitch * 1000.0f);
+            int yaw_i    = (int)(yaw * 1000.0f);
+            int thrust_i = (int)(thrust * 1000.0f);
 
-    xSemaphoreTake(xPrintSem, portMAX_DELAY);
-    UARTprintf("Norm: R:%d P:%d Y:%d T:%d | SW:%d %d\r\n",
-               roll_i, pitch_i, yaw_i, thrust_i,
-               switch_vec[0], switch_vec[1]);
-    xSemaphoreGive(xPrintSem);
+            xSemaphoreTake(xPrintSem, portMAX_DELAY);
+            UARTprintf("Norm: R:%d P:%d Y:%d T:%d | SW:%d %d\r\n",
+                    roll_i, pitch_i, yaw_i, thrust_i,
+                    switch_vec[0], switch_vec[1]);
+            xSemaphoreGive(xPrintSem);
 
-    lastPrint = now;
-}
+            lastPrint = now;
+        }
 #endif
 
         ulEnd = getTime_100ns();
+
 #if DEBUG
+
         vLogTiming(ulThread_id, ulStart, ulEnd);
 #endif
     }
