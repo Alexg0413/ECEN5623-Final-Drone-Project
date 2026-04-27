@@ -134,14 +134,18 @@ void Radio_Input(void *pvParameters)
         if (roll > 1.0f) roll = 1.0f;
         if (roll < -1.0f) roll = -1.0f;
 
+
         if (pitch > 1.0f) pitch = 1.0f;
         if (pitch < -1.0f) pitch = -1.0f;
+
 
         if (yaw > 1.0f) yaw = 1.0f;
         if (yaw < -1.0f) yaw = -1.0f;
 
+
         if (thrust > 1.0f) thrust = 1.0f;
         if (thrust < 0.0f) thrust = 0.0f;
+
 
         taskENTER_CRITICAL();
         input_vec[0] = thrust;
@@ -152,23 +156,47 @@ void Radio_Input(void *pvParameters)
         switch_vec[0] = (pw[4] > 1500);
         taskEXIT_CRITICAL();
 
-#if DEBUG
-        uint32_t now = xTaskGetTickCount();
-        if ((now - lastPrint) > pdMS_TO_TICKS(200))
-        {
-            int roll_i   = (int)(roll * 1000.0f);
-            int pitch_i  = (int)(pitch * 1000.0f);
-            int yaw_i    = (int)(yaw * 1000.0f);
-            int thrust_i = (int)(thrust * 1000.0f);
+ #if DEBUG
+static uint32_t lastPrint = 0;
+static int roll_spikes = 0;
+static int pitch_spikes = 0;
+static int yaw_spikes = 0;
+static int thrust_spikes = 0;
 
-            xSemaphoreTake(xPrintSem, portMAX_DELAY);
-            UARTprintf("Norm: R:%d P:%d Y:%d T:%d | SW:%d %d\r\n",
-                    roll_i, pitch_i, yaw_i, thrust_i,
-                    switch_vec[0], switch_vec[1]);
-            xSemaphoreGive(xPrintSem);
+uint32_t now = xTaskGetTickCount();
 
-            lastPrint = now;
-        }
+
+if (roll == 1.0f || roll == -1.0f)   roll_spikes++;
+if (pitch == 1.0f || pitch == -1.0f) pitch_spikes++;
+if (yaw == 1.0f || yaw == -1.0f)     yaw_spikes++;
+
+if (thrust == 1.0f || thrust == 0.0f) thrust_spikes++;
+
+
+
+
+if ((now - lastPrint) > pdMS_TO_TICKS(1000))
+{
+    xSemaphoreTake(xPrintSem, portMAX_DELAY);
+
+    UARTprintf("Spikes/s R:%d P:%d Y:%d T:%d | SW:%d %d\r\n",
+               roll_spikes,
+               pitch_spikes,
+               yaw_spikes,
+               thrust_spikes,
+               switch_vec[0],
+               switch_vec[1]);
+
+    xSemaphoreGive(xPrintSem);
+
+
+    roll_spikes = 0;
+    pitch_spikes = 0;
+    yaw_spikes = 0;
+    thrust_spikes = 0;
+
+    lastPrint = now;
+}
 #endif
 
         ulEnd = getTime_100ns();
