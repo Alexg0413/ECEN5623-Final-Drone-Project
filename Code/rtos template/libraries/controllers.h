@@ -32,7 +32,7 @@
 #define IMAX_PITCH_RATE  0.5f
 
 #define KP_YAW_RATE     0.1f
-#define KI_YAW_RATE     0.05f
+#define KI_YAW_RATE     0.02f
 #define KD_YAW_RATE     0.0f
 #define IMAX_YAW_RATE   0.5f
 
@@ -53,8 +53,8 @@
 /////////////////////////////////////
 // Motor PWM range (microseconds — standard hobby ESC protocol)
 /////////////////////////////////////
-#define PWM_MIN_US       1080    // pulse width for motor off / min throttle
-#define PWM_MAX_US       2000    // pulse width for full throttle
+#define PWM_MIN_US       1100    // pulse width for motor off / min throttle
+#define PWM_MAX_US       1950    // pulse width for full throttle
 
 // Max PWM authority granted to each attitude axis.
 // Attitude commands are normalized +-1; this scales them to a PWM delta.
