@@ -40,7 +40,7 @@ void attitude_controllers_update(float state_vec[], float input_vec[])
     // error = setpoint (pilot input) - measured state
     float roll_err  = input_vec[1] - state_vec[0];  
     float pitch_err = input_vec[2] - state_vec[1];  
-    float yaw_rate_err  = 5.0f * input_vec[3] - state_vec[5]; 
+    float yaw_rate_err  = (YAW_GAIN_MULT * input_vec[3]) - state_vec[5]; 
     
     float roll_rate_trg   = pid_update(&roll_pid,   roll_err);
     float pitch_rate_trg  = pid_update(&pitch_pid,  pitch_err);
@@ -116,13 +116,13 @@ void motor_mixing_update(int armed, float state_vec[])
     // Scale attitude commands +-1 -> +- MIXER_ATT_SCALE PWM counts
     float roll  = attitude_commands[0] * MIXER_ATT_SCALE;
     float pitch = attitude_commands[1] * MIXER_ATT_SCALE;
-    float yaw   = attitude_commands[2] * MIXER_ATT_SCALE;
+    float yaw   = attitude_commands[2] * MIXER_YAW_SCALE;
 
     // X-frame mixing
-    float fl = thr + roll + pitch + yaw;   // front-left
-    float fr = thr - roll + pitch - yaw;   // front-right
-    float rl = thr + roll - pitch - yaw;   // rear-left
-    float rr = thr - roll - pitch + yaw;   // rear-right
+    float fl = thr + roll + pitch - yaw;   // front-left
+    float fr = thr - roll + pitch + yaw;   // front-right
+    float rl = thr + roll - pitch + yaw;   // rear-left
+    float rr = thr - roll - pitch - yaw;   // rear-right
 
     // Clamp each motor to the valid PWM range
     if (fl < PWM_MIN_US) fl = PWM_MIN_US;  if (fl > PWM_MAX_US) fl = PWM_MAX_US;

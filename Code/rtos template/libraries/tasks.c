@@ -160,7 +160,7 @@ void Radio_Input(void *pvParameters)
         taskEXIT_CRITICAL();
 
         float roll   = (pw[0] - 1500.0f) / 500.0f;
-        float pitch  = -1*(pw[1] - 1500.0f) / 500.0f;
+        float pitch  = (pw[1] - 1500.0f) / 500.0f;
         float yaw    = (pw[3] - 1500.0f) / 500.0f;
         float thrust = (2000.0f-pw[2]) / 1000.0f;
 
@@ -356,7 +356,7 @@ void logOutput(void *pvParameters)
 {
     SemaphoreHandle_t semaphore = (SemaphoreHandle_t)pvParameters;
 
-    int motor_cmd[4];
+    float motor_cmd[4];
 
     while(1)
     {
@@ -366,17 +366,21 @@ void logOutput(void *pvParameters)
         xSemaphoreTake(xPrintSem, portMAX_DELAY);
         
         UARTprintf("---- motor outputs ----\n");
-        int i;
-
+        
         taskENTER_CRITICAL();
-            for (i = 0; i < 4; i++)
-                motor_cmd[i] = output_vec[i];
+            motor_cmd[0] = thrust_command;
+            motor_cmd[1] = attitude_commands[0];
+            motor_cmd[2] = attitude_commands[1];
+            motor_cmd[3] = attitude_commands[2];
         taskEXIT_CRITICAL();
-        UARTprintf("Motor outputs (us): %d %d %d %d\r\n",
-            motor_cmd[0], motor_cmd[1], motor_cmd[2], motor_cmd[3]);
+        UARTprintf("Motor outputs: T=%d R=%d P=%d Y=%d\r\n",
+            (int32_t)(motor_cmd[0]*1000), (int32_t)(motor_cmd[1]*1000), (int32_t)(motor_cmd[2]*1000), (int32_t)(motor_cmd[3]*1000));
+
+
 
         xSemaphoreGive(xPrintSem);
 #endif
+
     }
 }
 

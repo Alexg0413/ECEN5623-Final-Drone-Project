@@ -21,18 +21,18 @@
 #define KD_PITCH    0.0f
 #define IMAX_PITCH  1.0f
 
-#define KP_ROLL_RATE     0.135f
-#define KI_ROLL_RATE     0.135f
-#define KD_ROLL_RATE     0.0036f
+#define KP_ROLL_RATE     0.11f
+#define KI_ROLL_RATE     0.09f
+#define KD_ROLL_RATE     0.003f
 #define IMAX_ROLL_RATE   0.5f
 
-#define KP_PITCH_RATE    0.135f
-#define KI_PITCH_RATE    0.135f
-#define KD_PITCH_RATE    0.0036f
+#define KP_PITCH_RATE    0.11f
+#define KI_PITCH_RATE    0.09f
+#define KD_PITCH_RATE    0.003f
 #define IMAX_PITCH_RATE  0.5f
 
-#define KP_YAW_RATE    0.180f
-#define KI_YAW_RATE     0.018f
+#define KP_YAW_RATE     0.1f
+#define KI_YAW_RATE     0.05f
 #define KD_YAW_RATE     0.0f
 #define IMAX_YAW_RATE   0.5f
 
@@ -53,13 +53,16 @@
 /////////////////////////////////////
 // Motor PWM range (microseconds — standard hobby ESC protocol)
 /////////////////////////////////////
-#define PWM_MIN_US       1100    // pulse width for motor off / min throttle
+#define PWM_MIN_US       1080    // pulse width for motor off / min throttle
 #define PWM_MAX_US       2000    // pulse width for full throttle
 
 // Max PWM authority granted to each attitude axis.
 // Attitude commands are normalized +-1; this scales them to a PWM delta.
 // 250 -> full authority on one axis swings 25% of the PWM range.
-#define MIXER_ATT_SCALE  250.0f
+#define MIXER_ATT_SCALE  300.0f
+#define MIXER_YAW_SCALE 150.0f // yaw typically needs less authority than roll/pitch
+
+#define YAW_GAIN_MULT 18.0f
 
 /////////////////////////////////////
 // Throttle parameters
@@ -67,7 +70,7 @@
 
 // Learned hover throttle fraction 
 //Tune to match the fraction of full throttle that holds the vehicle level at hover.
-#define THR_MID          0.35f // set between 0 and 0.5, typically around 0.3-0.4
+#define THR_MID          0.45f // set between 0 and 0.5, typically around 0.3-0.4
 
 
 // Initialize all PID controllers with above gains
