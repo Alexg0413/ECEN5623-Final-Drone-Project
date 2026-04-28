@@ -73,7 +73,7 @@ void z_stabilize_controller_update(float state_vec[], float input_vec[])
 
     // angle boost 
     // adjust the throttle command based on tilt angle to maintain vertical thrust. boost = 1/cos(tilt)
-    float cos_tilt        = fminf(cosf(state_vec[0]), cosf(state_vec[1]));
+    float cos_tilt     = fminf(cosf(state_vec[0]), cosf(state_vec[1]));
     float boost_factor = 1.0f / cos_tilt;
     if (boost_factor > 2.0f) boost_factor = 1.75f;
     if (boost_factor < 1.0f) boost_factor = 1.0f;
@@ -99,8 +99,9 @@ void motor_mixing_update(int armed, float state_vec[])
     *          /       \
     *    RL [1]        RR [4]
     */
+    float deg_lim = 1.3f; // ~80 deg
 
-    if (armed==0 || fabsf(state_vec[0]) > 1.3f || fabsf(state_vec[1]) > 1.3f) 
+    if (armed==0 || fabsf(state_vec[0]) > deg_lim || fabsf(state_vec[1]) > deg_lim) 
     {
         output_vec[0] = PWM_MIN_US;
         output_vec[1] = PWM_MIN_US;

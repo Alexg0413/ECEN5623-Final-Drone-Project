@@ -45,7 +45,7 @@ static SeqEntry_t xSeqTable[NUM_SERVICES] =
     {12, 0, NULL}, // Service_2 - 50 Hz 
     {4, 0, NULL},  // Service_3 - 150 Hz
     {6, 0, NULL},  // Service_4 - 100 Hz
-    {120, 0, NULL}, //  log     - 5 Hz
+    {300, 0, NULL}, //  log     - 5 Hz
 };
 // ---------------------------------
 

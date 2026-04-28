@@ -33,6 +33,8 @@ void vTimestampLoggingTask(void *pvParameters);
 // logs running average duration per task 
 void vWcetLoggingTask(void *pvParameters);
 
+void logOutput(void *pvParameters);
+
 /////// helper functions
 
 // setup the shared UART semaphore 

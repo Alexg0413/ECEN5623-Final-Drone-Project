@@ -11,41 +11,41 @@
 ///////////////////////////////////// 
 // PID gains 
 //////////////////////////////////////
-#define KP_ROLL     0.0f
+#define KP_ROLL     4.5f
 #define KI_ROLL     0.0f
 #define KD_ROLL     0.0f
 #define IMAX_ROLL   1.0f
 
-#define KP_PITCH    0.0f
+#define KP_PITCH    4.5f
 #define KI_PITCH    0.0f
 #define KD_PITCH    0.0f
 #define IMAX_PITCH  1.0f
 
-#define KP_ROLL_RATE     0.0f
-#define KI_ROLL_RATE     0.0f
-#define KD_ROLL_RATE     0.0f
-#define IMAX_ROLL_RATE   1.0f
+#define KP_ROLL_RATE     0.135f
+#define KI_ROLL_RATE     0.135f
+#define KD_ROLL_RATE     0.0036f
+#define IMAX_ROLL_RATE   0.5f
 
-#define KP_PITCH_RATE    0.0f
-#define KI_PITCH_RATE    0.0f
-#define KD_PITCH_RATE    0.0f
-#define IMAX_PITCH_RATE  1.0f
+#define KP_PITCH_RATE    0.135f
+#define KI_PITCH_RATE    0.135f
+#define KD_PITCH_RATE    0.0036f
+#define IMAX_PITCH_RATE  0.5f
 
-#define KP_YAW_RATE    0.0f
-#define KI_YAW_RATE     0.0f
+#define KP_YAW_RATE    0.180f
+#define KI_YAW_RATE     0.018f
 #define KD_YAW_RATE     0.0f
-#define IMAX_YAW_RATE   1.0f
+#define IMAX_YAW_RATE   0.5f
 
 ///////// used for z-pos hold controller 
-#define KP_CLIMB_RATE   0.0f
-#define KI_CLIMB_RATE   0.0f
-#define KD_CLIMB_RATE   0.0f
-#define IMAX_CLIMB_RATE 1.0f
+// #define KP_CLIMB_RATE   0.0f
+// #define KI_CLIMB_RATE   0.0f
+// #define KD_CLIMB_RATE   0.0f
+// #define IMAX_CLIMB_RATE 1.0f
 
-#define KP_CLIMB_ACCEL   0.0f
-#define KI_CLIMB_ACCEL   0.0f
-#define KD_CLIMB_ACCEL   0.0f
-#define IMAX_CLIMB_ACCEL 1.0f
+// #define KP_CLIMB_ACCEL   0.0f
+// #define KI_CLIMB_ACCEL   0.0f
+// #define KD_CLIMB_ACCEL   0.0f
+// #define IMAX_CLIMB_ACCEL 1.0f
 
 // Derivative low-pass cutoff frequency (Hz) applied to all axes
 #define FCUT_HZ     30.0f

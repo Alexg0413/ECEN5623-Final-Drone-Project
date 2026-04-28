@@ -112,6 +112,7 @@ void Timer3BIntHandler(void)
         rising_edge[3] = true;
     }
 }
+
 void Timer4AIntHandler(void)
 {
     TimerIntClear(TIMER4_BASE, TIMER_CAPA_EVENT);
@@ -155,8 +156,6 @@ void Timer4BIntHandler(void)
         rising_edge[5] = true;
     }
 }
-
-
 
 void PWM_Input_Init(void)
 {
@@ -270,7 +269,6 @@ void PWM_Input_Init(void)
     TimerEnable(TIMER4_BASE, TIMER_BOTH);
 }
 
-
 void PWM_Output_Init(void)
 {
     // Enable PWM module + GPIO
@@ -322,8 +320,6 @@ void PWM_Output_Init(void)
     PWMGenEnable(PWM0_BASE, PWM_GEN_2);
     PWMGenEnable(PWM0_BASE, PWM_GEN_3);
 }
-
-
 
 //how we will update the motor output 
 void Motor_Update(int *cmd)

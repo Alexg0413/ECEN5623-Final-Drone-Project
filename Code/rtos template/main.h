@@ -20,19 +20,11 @@
 
 extern uint32_t g_ui32SysClock;
 
-// state_vec[9]  — attitude, angular rates, z-position, z-velocity, z-acceleration
-// input_vec[4]  — [thrust, roll_target, pitch_target, yaw_rate_target]
-// output_vec[4] — [motor0, motor1, motor2, motor3]
-// switch_vec[3] — [Arm, Aux1, Aux2]
-
 // Shared state arrays (defined in main.c, accessible to all tasks)
-extern float state_vec[9];
-extern float input_vec[4];
-extern int   output_vec[4];
-extern int   switch_vec[2];
-
-
-
+extern float state_vec[9]; //— attitude, angular rates, z-position, z-velocity, z-acceleration
+extern float input_vec[4]; // — [thrust, roll_target, pitch_target, yaw_rate_target]
+extern int   output_vec[4]; // — [motor0, motor1, motor2, motor3]
+extern int   switch_vec[2]; //— [Arm, Aux1, Aux2]
 
 
 #endif /* MAIN_H_ */

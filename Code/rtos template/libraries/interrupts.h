@@ -13,7 +13,7 @@
 #include "queue.h"
 #include "semphr.h"
 
-#define NUM_SERVICES 8
+#define NUM_SERVICES 5
 
 typedef struct
 {
