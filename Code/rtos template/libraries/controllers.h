@@ -53,7 +53,7 @@
 /////////////////////////////////////
 // Motor PWM range (microseconds — standard hobby ESC protocol)
 /////////////////////////////////////
-#define PWM_MIN_US       1000    // pulse width for motor off / min throttle
+#define PWM_MIN_US       1100    // pulse width for motor off / min throttle
 #define PWM_MAX_US       2000    // pulse width for full throttle
 
 // Max PWM authority granted to each attitude axis.

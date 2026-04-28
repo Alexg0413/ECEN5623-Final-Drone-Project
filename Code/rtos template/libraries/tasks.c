@@ -232,7 +232,7 @@ void Motor_Output(void *pvParameters)
             if (motor_cmd[i] > 2000) motor_cmd[i] = 2000;
         }
 
-        //Motor_Update(motor_cmd);
+        Motor_Update(motor_cmd);
 
         ulEnd = getTime_100ns();
 

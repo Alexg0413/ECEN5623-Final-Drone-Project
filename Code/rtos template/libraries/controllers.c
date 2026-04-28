@@ -10,7 +10,7 @@
 #include "main.h"
 #include <math.h>
 
-float attitude_commands[3] = {0};  // [roll_torque, pitch_torque, yaw_torque]
+float attitude_commands[3] = {0,0,0};  // [roll_torque, pitch_torque, yaw_torque]
 float thrust_command       = 0.0f; // normalized throttle [0, 1]
 
 // One PID instance per control axis
@@ -19,8 +19,8 @@ static PID_t pitch_pid;
 static PID_t roll_rate_pid;
 static PID_t pitch_rate_pid;
 static PID_t yaw_rate_pid;
-static PID_t climb_rate_pid;
-static PID_t climb_accel_pid;
+// static PID_t climb_rate_pid;
+// static PID_t climb_accel_pid;
 
 // state vector: [roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate, z_pos, z_velo, z_accel]
 // input vector: [thrust, roll_target, pitch_target, yaw_rate_target]
@@ -40,7 +40,7 @@ void attitude_controllers_update(float state_vec[], float input_vec[])
     // error = setpoint (pilot input) - measured state
     float roll_err  = input_vec[1] - state_vec[0];  
     float pitch_err = input_vec[2] - state_vec[1];  
-    float yaw_rate_err  = input_vec[3] - state_vec[5]; 
+    float yaw_rate_err  = 5.0f * input_vec[3] - state_vec[5]; 
     
     float roll_rate_trg   = pid_update(&roll_pid,   roll_err);
     float pitch_rate_trg  = pid_update(&pitch_pid,  pitch_err);

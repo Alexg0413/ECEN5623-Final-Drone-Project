@@ -13,9 +13,11 @@
  */
 // Standard includes
 #include <libraries/interrupts.h>
+#include <libraries/controllers.h>
 #include <libraries/tasks.h>
 #include <libraries/uart.h>
 #include <libraries/CAN.h>
+#include <libraries/PWM.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "driverlib/pwm.h"
@@ -43,7 +45,7 @@
 #include "driverlib/pin_map.h"
 #include "driverlib/interrupt.h"
 
-#include <libraries/PWM.h>
+
 
 float state_vec[9] = {0};  //  [roll, pitch, yaw, roll_rate, pitch_rate, yaw_rate, z_pos, z_velo, z_accel]
 float input_vec[4]  = {0};  // [thrust, roll_target, pitch_target, yaw_rate_target]
@@ -91,6 +93,8 @@ int main(void)
     
     // initialize DWT cycle counter for accurate timing
     DWT_init(); 
+
+    attitude_controllers_init(); // initialize PID controllers with specified gains
 
     ///////////////////////////////////// task initialization
     xTaskCreate(State_input,  "S1", configMINIMAL_STACK_SIZE, (void*)xSems[0], configMAX_PRIORITIES-1, NULL); // S1: 200 Hz
