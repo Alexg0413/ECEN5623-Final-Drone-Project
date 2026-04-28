@@ -99,14 +99,14 @@ void motor_mixing_update(int armed, float state_vec[])
     *          /       \
     *    RL [1]        RR [4]
     */
-    float deg_lim = 1.3f; // ~80 deg
+    float deg_lim = 1.2f; // ~80 deg
 
     if (armed==0 || fabsf(state_vec[0]) > deg_lim || fabsf(state_vec[1]) > deg_lim) 
     {
-        output_vec[0] = PWM_MIN_US;
-        output_vec[1] = PWM_MIN_US;
-        output_vec[2] = PWM_MIN_US;
-        output_vec[3] = PWM_MIN_US;
+        output_vec[0] = PWM_OFF;
+        output_vec[1] = PWM_OFF;
+        output_vec[2] = PWM_OFF;
+        output_vec[3] = PWM_OFF;
         return;
     }
 

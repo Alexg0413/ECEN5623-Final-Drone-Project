@@ -55,6 +55,7 @@
 /////////////////////////////////////
 #define PWM_MIN_US       1100    // pulse width for motor off / min throttle
 #define PWM_MAX_US       1950    // pulse width for full throttle
+#define PWM_OFF       1000    // pulse width for motor off / min throttle
 
 // Max PWM authority granted to each attitude axis.
 // Attitude commands are normalized +-1; this scales them to a PWM delta.

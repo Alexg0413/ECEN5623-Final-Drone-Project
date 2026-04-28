@@ -16,7 +16,7 @@
 #define SYSTEM_CLOCK    120000000U
 
 // Set to 1 to enable all logging and UART print output, 0 to disable
-#define DEBUG 0
+#define DEBUG 1
 
 extern uint32_t g_ui32SysClock;
 

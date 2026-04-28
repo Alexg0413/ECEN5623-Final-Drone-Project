@@ -23,6 +23,7 @@
 typedef struct {
     uint32_t count;       // number of samples collected
     uint32_t avg_ticks;   // running average in x100ns units
+    uint32_t max_ticks;   // max observed duration in x100ns units
 } TaskStats_t;
 
 // per-task stats, indexed by task_id-1
@@ -59,6 +60,8 @@ static inline void vLogTiming(uint32_t thread_id, uint32_t start, uint32_t end)
     xTask_stats[idx].count++;
     xTask_stats[idx].avg_ticks = (uint32_t)((int32_t)xTask_stats[idx].avg_ticks +
         ((int32_t)dur - (int32_t)xTask_stats[idx].avg_ticks) / (int32_t)xTask_stats[idx].count);
+    if (dur > xTask_stats[idx].max_ticks)
+        xTask_stats[idx].max_ticks = dur;
 }
 
 // creates UART (printing) semaphore, not needed but helps prevent intermingled print outputs
@@ -339,11 +342,12 @@ void vWcetLoggingTask(void *pvParameters)
         {
             if (xTask_stats[i].count > 0)
             {
-                // logs the average duration in x100ns units and number of samples
-                UARTprintf("Task %u: avg_duration=%u (x100ns), samples=%u\n",
+                // logs the average and max duration in x100ns units and number of samples
+                UARTprintf("Task %u: avg_duration=%u max_duration=%u (x100ns), samples=%u\n",
                            i + 1,
                            xTask_stats[i].avg_ticks,
-                           xTask_stats[i].count-1); // count starts at one so -1 for display pourposes
+                           xTask_stats[i].max_ticks,
+                           xTask_stats[i].count-1); // count starts at one so -1 for display purposes
             }
         }
         xSemaphoreGive(xPrintSem);
